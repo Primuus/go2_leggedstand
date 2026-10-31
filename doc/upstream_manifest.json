@@ -69,14 +69,14 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "3c27ffc2c8d5d46dfdc6d31528cf5cf469cb2d0fb67ce6c6cbcde4eb4d864d02",
+      "local_sha256": "f1bb40cf927fb6f0a0e98353bc3a965b9dc6829d33f280ca2a2c53852b05b922",
       "modified": true
     },
     {
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand.py",
       "upstream_sha256": "41187c22f0ffc58a4f636f163541bf3ba35a8617eb44250ef69595a10e6f5ddc",
       "bytes": 63544,
-      "local_sha256": "eeb95a868a474e4ec3a3e7dba1d003a5db3b44582b23258dddfb07e16183844c",
+      "local_sha256": "916ebc487d735a1aca77fa2bd724c507dcb986f2f0f3766f19e590161a642c1a",
       "modified": true
     },
     {
@@ -286,7 +286,7 @@
   "validation": {
     "static": "passed",
     "cpu_ppo": "4 synthetic environments x 24 steps; original network and PPO parameters; symmetry enabled; finite losses",
-    "isaac_gym": "not run: Isaac Gym unavailable locally; server SSH authentication failed",
+    "isaac_gym": "not run: unavailable locally; server runtime dependencies not validated; password SSH and training file sync succeeded",
     "reward_terms": {
       "action_rate": -0.05,
       "alive": 1.0,
@@ -372,7 +372,7 @@
       ],
       "validation": "FK, soft joint limits, contacts, source reward functions, static load and action limits passed; no training run",
       "documentation": "doc/参考关节与高度目标对齐.md",
-      "server_sync": "pending: SSH authentication failed",
+      "server_sync": "synced: isaac-record:/workspace/go2_hindstand_gym; hashes matched",
       "subsequent_change": "default_joint_angles and initial state subsequently aligned by upright_initialization below"
     },
     "upright_initialization": {
@@ -415,11 +415,58 @@
           "upright_cosine": 0.918164074420929,
           "finite_state": true
         },
-        "isaac_gym": "not run: unavailable locally; SSH authentication failed"
+        "isaac_gym": "not run; source/reset tests only"
       },
       "documentation": "doc/参考关节与高度目标对齐.md",
-      "server_sync": "pending: SSH authentication failed",
+      "server_sync": "synced: isaac-record:/workspace/go2_hindstand_gym; hashes matched",
       "training_started": false
+    },
+    "fixed_physics": {
+      "date": "2026-11-01",
+      "authorization": "User requested disabling mass, friction and other domain randomization initially",
+      "all_domain_rand_boolean_flags": false,
+      "fixed_values": {
+        "friction": 0.6,
+        "restitution": 0.0,
+        "joint_friction": 0.2,
+        "joint_damping": 0.1,
+        "joint_armature": 0.01,
+        "pd_multiplier": 1.0,
+        "motor_zero_offset": 0.0
+      },
+      "mass_and_com": "URDF nominal values",
+      "engine_note": "Passive joint values follow local XML numerically, not proof of identical friction/contact dynamics",
+      "fixes": [
+        "Always initialize restitution tensor",
+        "Explicit fixed joint properties instead of hardcoded ones",
+        "Report actual applied friction in critic",
+        "Skip delay RNG when disabled"
+      ],
+      "unchanged": [
+        "reward formulas and weights",
+        "PD gains and PPO",
+        "upright initialization",
+        "observation noise",
+        "command sampling",
+        "actor/critic dimensions"
+      ],
+      "validation": "Actual property callbacks and production tensor initializers on CPU; 3 environments; no domain RNG; unchanged mass/COM; 45/86 finite observations; material randomization reenable passed; 29 reward ASTs unchanged; syntax passed",
+      "training_started": false,
+      "documentation": "doc/工程说明.md"
     }
+  },
+  "server_sync": {
+    "date": "2026-11-01",
+    "host": "10.29.150.42",
+    "container": "isaac-record",
+    "path": "/workspace/go2_hindstand_gym",
+    "scope": "54 tracked files except local-only MuJoCo OBJ meshes; training code/URDF/DAE included",
+    "verification": "SHA-256 equality for all 54 files",
+    "mesh_source": "server-local /workspace/unitree_ros/robots/go2_description/dae, copied after SHA-256 equality checks",
+    "initial_archive_bytes": 77360,
+    "remote_preexisting_project": false,
+    "remote_git": "not initialized; commits local only",
+    "isaac_gym_runtime": "not validated",
+    "training_started": false
   }
 }

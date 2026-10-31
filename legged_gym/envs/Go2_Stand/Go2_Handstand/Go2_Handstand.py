@@ -64,8 +64,8 @@ class Go2_Handstand_Robot(BaseTask):
         # 子步 i < delay_steps 沿用上一步动作，之后切换为当前动作
         # 注意：存放原始动作，缩放由 _compute_torques 内部完成（只缩放一次，避免双重 action_scale）
         self.delayed_actions = self.actions.clone().view(self.num_envs, 1, self.num_actions).repeat(1, self.cfg.control.decimation, 1)
-        delay_steps = torch.randint(0, self.cfg.control.decimation, (self.num_envs, 1), device=self.device)
         if self.cfg.domain_rand.delay:
+            delay_steps = torch.randint(0, self.cfg.control.decimation, (self.num_envs, 1), device=self.device)
             for i in range(self.cfg.control.decimation):
                 self.delayed_actions[:, i] = self.last_actions + (self.actions - self.last_actions) * (i >= delay_steps)
         # step physics and render each frame
@@ -290,10 +290,7 @@ class Go2_Handstand_Robot(BaseTask):
             if env_id==0:
                 # prepare friction randomization
                 friction_range = self.cfg.domain_rand.friction_range
-                self.friction_coeffs = torch_rand_float(friction_range[0], friction_range[1], (self.num_envs, 1), device=self.device)
-
-            for s in range(len(props)):
-                props[s].friction = self.friction_coeffs[env_id]
+                self.env_frictions = torch_rand_float(friction_range[0], friction_range[1], (self.num_envs, 1), device=self.device)
         
         if self.cfg.domain_rand.randomize_restitution:
             if env_id==0:
@@ -301,8 +298,9 @@ class Go2_Handstand_Robot(BaseTask):
                 restitution_range = self.cfg.domain_rand.restitution_range
                 self.restitution_coeffs = torch_rand_float(restitution_range[0], restitution_range[1], (self.num_envs, 1), device=self.device)
 
-            for s in range(len(props)):
-                props[s].restitution = self.restitution_coeffs[env_id]
+        for prop in props:
+            prop.friction = self.env_frictions[env_id, 0].item()
+            prop.restitution = self.restitution_coeffs[env_id, 0].item()
         return props
 
     def _process_dof_props(self, props, env_id):
@@ -750,11 +748,11 @@ class Go2_Handstand_Robot(BaseTask):
         initial_dof_state = np.zeros(self.num_dof, dtype=gymapi.DofState.dtype)
         initial_dof_state['pos'] = [self.cfg.init_state.default_joint_angles[name] for name in self.dof_names]
 
-        self.joint_friction_coeffs = torch.ones(self.num_envs, 1, dtype=torch.float, device=self.device,requires_grad=False)
+        self.joint_friction_coeffs = torch.full((self.num_envs, 1), self.cfg.domain_rand.joint_friction, dtype=torch.float, device=self.device)
 
-        self.joint_damping_coeffs = torch.ones(self.num_envs, 1, dtype=torch.float, device=self.device,requires_grad=False)
+        self.joint_damping_coeffs = torch.full((self.num_envs, 1), self.cfg.domain_rand.joint_damping, dtype=torch.float, device=self.device)
 
-        self.joint_armatures = torch.zeros(self.num_envs, 1, dtype=torch.float, device=self.device,requires_grad=False)  
+        self.joint_armatures = torch.full((self.num_envs, 1), self.cfg.domain_rand.joint_armature, dtype=torch.float, device=self.device)
             
         self.torque_multiplier = torch.ones(self.num_envs, self.num_actions, dtype=torch.float, device=self.device,
                                           requires_grad=False)
@@ -773,7 +771,8 @@ class Go2_Handstand_Robot(BaseTask):
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
-        self.env_frictions = torch.zeros(self.num_envs, 1, dtype=torch.float32, device=self.device)
+        self.env_frictions = torch.full((self.num_envs, 1), self.cfg.domain_rand.friction, dtype=torch.float, device=self.device)
+        self.restitution_coeffs = torch.full((self.num_envs, 1), self.cfg.domain_rand.restitution, dtype=torch.float, device=self.device)
 
         self.body_mass = torch.zeros(self.num_envs, 1, dtype=torch.float32, device=self.device, requires_grad=False)
         for i in range(self.num_envs):

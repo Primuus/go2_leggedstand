@@ -115,43 +115,50 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         armature = 0.
         thickness = 0.01
     class domain_rand:
-        push_towards_goal=True
-        randomize_friction = True
+        # Fixed nominal values while randomization is disabled. Passive joint
+        # values follow local MuJoCo XML numerically; engine semantics differ.
+        friction = 0.6
+        restitution = 0.0
+        joint_friction = 0.2
+        joint_damping = 0.1
+        joint_armature = 0.01
+        push_towards_goal=False
+        randomize_friction = False
         friction_range = [0.2,1.2]
 
-        randomize_restitution = True
+        randomize_restitution = False
         restitution_range = [0.0, 0.3]
-        push_robots = True
+        push_robots = False
         push_interval_s = 8
         max_push_vel_xy = 0.4
         max_push_ang_vel = 0.6
 
-        randomize_base_mass = True
+        randomize_base_mass = False
         added_base_mass_range = [-1,2]
 
-        randomize_link_mass = True
+        randomize_link_mass = False
         multiplied_link_mass_range = [0.9, 1.1]
 
-        randomize_base_com = True
+        randomize_base_com = False
         added_base_com_range = [-0.05, 0.05]
 
-        randomize_pd_gains = True
+        randomize_pd_gains = False
         stiffness_multiplier_range = [0.9, 1.1]  
         damping_multiplier_range = [0.9, 1.1]    
 
 
-        randomize_motor_zero_offset = True
+        randomize_motor_zero_offset = False
         motor_zero_offset_range = [-0.035, 0.035] # Offset to add to the motor angles
 
-        delay = True  # HIMLoco 式 action delay：0~decimation 子步内随机切换点
+        delay = False  # HIMLoco 式 action delay：0~decimation 子步内随机切换点
 
-        randomize_joint_friction = True
+        randomize_joint_friction = False
         joint_friction_range = [0.01, 0.1]
 
-        randomize_joint_damping = True
+        randomize_joint_damping = False
         joint_damping_range = [0.0,0.1]
 
-        randomize_joint_armature = True
+        randomize_joint_armature = False
         joint_armature_range = [0.003, 0.08]    #
     class rewards:
         soft_dof_pos_limit = 0.9 # percentage of urdf limits, values above this limit are penalized
