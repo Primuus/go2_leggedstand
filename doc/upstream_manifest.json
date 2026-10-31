@@ -69,8 +69,8 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
-      "modified": false
+      "local_sha256": "ba0284832864afccc82f65fd846d04d36f2a1286ddce4fd98997428e52791d65",
+      "modified": true
     },
     {
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand.py",
@@ -317,5 +317,62 @@
     "manifest": "doc/local_asset_manifest.json",
     "entrypoint": "deploy_mujoco/sim2sim_go2_handstand.py",
     "training_files_changed": false
+  },
+  "training_adaptations": {
+    "reference_posture": {
+      "date": "2026-11-01",
+      "authorization": "User requested resolving posture/height conflict; reference joint changes approved",
+      "config_field": "init_state.descire_joint_angles",
+      "previous_joint_angles_rad": {
+        "FL_hip_joint": 0.0,
+        "RL_hip_joint": 0.0,
+        "FR_hip_joint": 0.0,
+        "RR_hip_joint": 0.0,
+        "FL_thigh_joint": 0.8,
+        "RL_thigh_joint": 2.25,
+        "FR_thigh_joint": 0.8,
+        "RR_thigh_joint": 2.25,
+        "FL_calf_joint": -1.5,
+        "RL_calf_joint": -1.75,
+        "FR_calf_joint": -1.5,
+        "RR_calf_joint": -1.75
+      },
+      "current_joint_angles_rad": {
+        "FL_hip_joint": 0.0,
+        "RL_hip_joint": 0.0,
+        "FR_hip_joint": 0.0,
+        "RR_hip_joint": 0.0,
+        "FL_thigh_joint": 0.889690551738,
+        "RL_thigh_joint": 2.323561137691,
+        "FR_thigh_joint": 0.889690551738,
+        "RR_thigh_joint": 2.323561137691,
+        "FL_calf_joint": -1.5,
+        "RL_calf_joint": -1.557252479414,
+        "FR_calf_joint": -1.5,
+        "RR_calf_joint": -1.557252479414
+      },
+      "urdf_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4",
+      "targets": {
+        "base_height_m": 0.52,
+        "front_foot_frame_height_m": 0.67,
+        "hind_sole_height_m": 0,
+        "projected_gravity": [
+          -1,
+          0,
+          0
+        ],
+        "com_xy": "hind-foot support midpoint"
+      },
+      "unchanged": [
+        "reward formulas and weights",
+        "default_joint_angles",
+        "initial state",
+        "observation and action dimensions",
+        "PD and PPO"
+      ],
+      "validation": "FK, soft joint limits, contacts, source reward functions, static load and action limits passed; no training run",
+      "documentation": "doc/参考关节与高度目标对齐.md",
+      "server_sync": "pending: SSH authentication failed"
+    }
   }
 }

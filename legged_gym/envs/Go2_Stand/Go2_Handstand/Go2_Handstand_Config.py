@@ -73,21 +73,24 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
             'FR_calf_joint': -1.5,  # [rad]
             'RR_calf_joint': -1.5,    # [rad]
         }
-        descire_joint_angles = { # = target angles [rad] when action = 0.0
+        # Reward reference [rad], independent of the action=0 default above.
+        # Upright base z=0.52 m, front foot frames z=0.67 m, rear soles on ground.
+        # IK uses the training URDF; see doc/参考关节与高度目标对齐.md.
+        descire_joint_angles = {
             'FL_hip_joint': 0.,   # [rad]
             'RL_hip_joint': 0.,   # [rad]
             'FR_hip_joint': 0. ,  # [rad]
             'RR_hip_joint': 0.,   # [rad]
 
-            'FL_thigh_joint': 0.8,     # [rad]
-            'RL_thigh_joint': 2.25,#1.,   # [rad]
-            'FR_thigh_joint': 0.8,     # [rad]
-            'RR_thigh_joint': 2.25,#1.,   # [rad]
+            'FL_thigh_joint': 0.889690551738,   # [rad]
+            'RL_thigh_joint': 2.323561137691,   # [rad]
+            'FR_thigh_joint': 0.889690551738,   # [rad]
+            'RR_thigh_joint': 2.323561137691,   # [rad]
 
             'FL_calf_joint': -1.5,   # [rad]
-            'RL_calf_joint': -1.75,    # [rad]
+            'RL_calf_joint': -1.557252479414,    # [rad]
             'FR_calf_joint': -1.5,  # [rad]
-            'RR_calf_joint': -1.75,    # [rad]
+            'RR_calf_joint': -1.557252479414,    # [rad]
                 }
     class control( LeggedRobotCfg.control ):
         # PD Drive parameters:
