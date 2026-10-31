@@ -1,0 +1,316 @@
+{
+  "repository": "https://github.com/yusongmin1/My_unitree_go2_gym",
+  "commit": "5c47fa3dd43930057d4aa9de3e38fdf0f23a4ab1",
+  "files": [
+    {
+      "path": "LICENSE",
+      "upstream_sha256": "5aef77b841ed45bffd8aaeb105cf8c4fc99aa722c3fc3e575b720b7d7e00105b",
+      "bytes": 1482,
+      "local_sha256": "5aef77b841ed45bffd8aaeb105cf8c4fc99aa722c3fc3e575b720b7d7e00105b",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/__init__.py",
+      "upstream_sha256": "6a255b7f9ad90ddb96036a32e711dfe4a49dcb26c9c2e8e891417ad9edecc8f6",
+      "bytes": 171,
+      "local_sha256": "6a255b7f9ad90ddb96036a32e711dfe4a49dcb26c9c2e8e891417ad9edecc8f6",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/envs/__init__.py",
+      "upstream_sha256": "6862ba56dcd4154dc39620390a962a9bfee61b336f8e25eb7f9adc07a3717bdf",
+      "bytes": 4264,
+      "local_sha256": "f411332a8929bedb8c05b5c19c4dfb616b822a20d8f5dcc8890da6c44ba81f52",
+      "modified": true
+    },
+    {
+      "path": "legged_gym/envs/base/base_config.py",
+      "upstream_sha256": "c2789af5409c82337862d78d99f82ef262d393af5dc810df6afe221d37ed2677",
+      "bytes": 2626,
+      "local_sha256": "c2789af5409c82337862d78d99f82ef262d393af5dc810df6afe221d37ed2677",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/envs/base/base_task.py",
+      "upstream_sha256": "bbfbb77ae8f90b0383af6003b554c47de75bea75b9f77e29a548cff123306330",
+      "bytes": 4469,
+      "local_sha256": "bbfbb77ae8f90b0383af6003b554c47de75bea75b9f77e29a548cff123306330",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/envs/base/legged_robot_config.py",
+      "upstream_sha256": "e4e7df06b9892be6771d3d08efe77c0ddc1e5ebc9b532732beeb2f2e5e8fef63",
+      "bytes": 11748,
+      "local_sha256": "e4e7df06b9892be6771d3d08efe77c0ddc1e5ebc9b532732beeb2f2e5e8fef63",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/scripts/train.py",
+      "upstream_sha256": "268c741c209aa0abbde48fe6211fa7a598ba9ac170e74487679aa1e4c9b4be86",
+      "bytes": 536,
+      "local_sha256": "268c741c209aa0abbde48fe6211fa7a598ba9ac170e74487679aa1e4c9b4be86",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/scripts/play.py",
+      "upstream_sha256": "1688269cf3ccd7f798b732e18f4904fed6cb9c5443ecb921af61661b16997d96",
+      "bytes": 4803,
+      "local_sha256": "28d43cfe169202ef456accd654f5c8ae499520e3d7a8e6eeb7d166a9c52c3f76",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/setup.py",
+      "upstream_sha256": "f18f93caa60fd8cc822d93e7e8f07905bad628a05d6bfaca1cd50c5d25e4ee11",
+      "bytes": 454,
+      "local_sha256": "f18f93caa60fd8cc822d93e7e8f07905bad628a05d6bfaca1cd50c5d25e4ee11",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
+      "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
+      "bytes": 13241,
+      "local_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand.py",
+      "upstream_sha256": "41187c22f0ffc58a4f636f163541bf3ba35a8617eb44250ef69595a10e6f5ddc",
+      "bytes": 63544,
+      "local_sha256": "41187c22f0ffc58a4f636f163541bf3ba35a8617eb44250ef69595a10e6f5ddc",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/utils/terrain.py",
+      "upstream_sha256": "51f4b169216961abbca50e668c90c840f022cf71532b74b24f5f6de44cf2b198",
+      "bytes": 9701,
+      "local_sha256": "51f4b169216961abbca50e668c90c840f022cf71532b74b24f5f6de44cf2b198",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/utils/logger.py",
+      "upstream_sha256": "7a64b8d2e5b17f12b013b963e766cfabfb856c4bc5d5a0ef7a086be74636258e",
+      "bytes": 6031,
+      "local_sha256": "7a64b8d2e5b17f12b013b963e766cfabfb856c4bc5d5a0ef7a086be74636258e",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/utils/__init__.py",
+      "upstream_sha256": "dcc5b2111e79f55db68f86476f731a0d6c156d595cda149eabc7b20a20123fcc",
+      "bytes": 326,
+      "local_sha256": "4377d4cc7058eca2e8c169b7cc024cf5d59343f5e747d1bce6c7474bb7da5dd5",
+      "modified": true
+    },
+    {
+      "path": "legged_gym/utils/isaacgym_utils.py",
+      "upstream_sha256": "95a3b10c4e0cd7254812c2a2cc2dfb4fb01e89d5a23fd233fcfdb922070200f8",
+      "bytes": 1071,
+      "local_sha256": "95a3b10c4e0cd7254812c2a2cc2dfb4fb01e89d5a23fd233fcfdb922070200f8",
+      "modified": false
+    },
+    {
+      "path": "legged_gym/utils/helpers.py",
+      "upstream_sha256": "331a60b4c544d24a2ccc3dd143c2ebe2d78e7d7e702a66dc6d073e15e4c31654",
+      "bytes": 18971,
+      "local_sha256": "586b73961d57a9980203bf2fe41b432efd36ed7961c815566760f5a57b27940f",
+      "modified": true
+    },
+    {
+      "path": "legged_gym/utils/task_registry.py",
+      "upstream_sha256": "c493bebd9ba986cad10665ce034f8542fa1d31f79a4ec121bf1ef37dcefea0ef",
+      "bytes": 7997,
+      "local_sha256": "fc1b943753d255330112275c4081efe0f501d94312358ebdbc6be998ba6cdc13",
+      "modified": true
+    },
+    {
+      "path": "legged_gym/utils/math.py",
+      "upstream_sha256": "1eef3eb2b1a09e7c964e255afe2f6373204bbf4e2c61567ecbc7026a4ab428be",
+      "bytes": 4842,
+      "local_sha256": "1eef3eb2b1a09e7c964e255afe2f6373204bbf4e2c61567ecbc7026a4ab428be",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/urdf/go2.urdf",
+      "upstream_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4",
+      "bytes": 24170,
+      "local_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/thigh.dae",
+      "upstream_sha256": "a622381ae308897ff143b8bbf02f075457c342b22984205040424a5a983246fa",
+      "bytes": 3884136,
+      "local_sha256": "a622381ae308897ff143b8bbf02f075457c342b22984205040424a5a983246fa",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/base.dae",
+      "upstream_sha256": "e52bebbb5c7ff1f6aedee620c9b5b349f6e965360ecc63a9bb743eeff2d0be64",
+      "bytes": 10727399,
+      "local_sha256": "e52bebbb5c7ff1f6aedee620c9b5b349f6e965360ecc63a9bb743eeff2d0be64",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/foot.dae",
+      "upstream_sha256": "ffbd95fd641866ce9bd277aa249b92dafc9148d70131fa2c52709a35ce5b710b",
+      "bytes": 506988,
+      "local_sha256": "ffbd95fd641866ce9bd277aa249b92dafc9148d70131fa2c52709a35ce5b710b",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/thigh_mirror.dae",
+      "upstream_sha256": "c7bae0b0565c2aa4b7cc15a538d795e9153e0f10c821cc18429e92693172bdc6",
+      "bytes": 3896575,
+      "local_sha256": "c7bae0b0565c2aa4b7cc15a538d795e9153e0f10c821cc18429e92693172bdc6",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/calf.dae",
+      "upstream_sha256": "29872fa1a435b92bc2b395fdfa7f0aee26101db3c494681896bd4ef24ee7883c",
+      "bytes": 1125517,
+      "local_sha256": "29872fa1a435b92bc2b395fdfa7f0aee26101db3c494681896bd4ef24ee7883c",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/calf_mirror.dae",
+      "upstream_sha256": "79c66be7ed06760bd5001c067a1fb0ac517f639d8b1a5f89be471903b3f359e1",
+      "bytes": 1125457,
+      "local_sha256": "79c66be7ed06760bd5001c067a1fb0ac517f639d8b1a5f89be471903b3f359e1",
+      "modified": false
+    },
+    {
+      "path": "resources/robots/go2/dae/hip.dae",
+      "upstream_sha256": "8735e10617afe252cef0844c1d139d15bc6d4c653660d742fea9fe05c2704d8f",
+      "bytes": 4666421,
+      "local_sha256": "8735e10617afe252cef0844c1d139d15bc6d4c653660d742fea9fe05c2704d8f",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/__init__.py",
+      "upstream_sha256": "5c70c5a865ae3a49f5201bfc873678548b69f3b0ddec4d00bcf8bf28bb24f33d",
+      "bytes": 1661,
+      "local_sha256": "5c70c5a865ae3a49f5201bfc873678548b69f3b0ddec4d00bcf8bf28bb24f33d",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/algorithms/__init__.py",
+      "upstream_sha256": "aaf8dd144131aebf1e651b48de1c47b89f5e3147b0e39e99626d35b87982a4bd",
+      "bytes": 1901,
+      "local_sha256": "f8745057c91c217fcedc8e6ce10b2490eb3b2d5c2b524d9b518b64f0c85eec39",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/rsl_rl/algorithms/ppo.py",
+      "upstream_sha256": "d1c2517154ac55570fad43995be858b701d73dd6c9a19afc5114dbf31ddd4156",
+      "bytes": 11272,
+      "local_sha256": "e21722921e5716acec2c4ce945b716b77ccb8b3efe72e769f40ae0ade1289fed",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/rsl_rl/modules/__init__.py",
+      "upstream_sha256": "e32c7f69bceb4ff586b62174950c04958cc7c6ea16645c1780cd2ca3b23d6ede",
+      "bytes": 1996,
+      "local_sha256": "b720b2da52bd494ecf5a103cd6c3bcd790e496b9df39522ec4952870b9c1cbaa",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/rsl_rl/modules/actor_critic.py",
+      "upstream_sha256": "7113dd5cfcc8a7220400b50e07a33fd7261cea31c781728156051ea36af0b991",
+      "bytes": 5903,
+      "local_sha256": "7113dd5cfcc8a7220400b50e07a33fd7261cea31c781728156051ea36af0b991",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/modules/actor_critic_recurrent.py",
+      "upstream_sha256": "db5eeb05c963e5ab61829b076a7360ce9441deb0441cca7e08d214623cadce3c",
+      "bytes": 5301,
+      "local_sha256": "db5eeb05c963e5ab61829b076a7360ce9441deb0441cca7e08d214623cadce3c",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/runners/__init__.py",
+      "upstream_sha256": "e158aeebb06c3bc8e2bec22a2c6416ea7ed04236dd48f1f77836b5cfa7903ffa",
+      "bytes": 2027,
+      "local_sha256": "078e0a8c7ba7ac55051c08dab5b323c242ac220e54a98fbafe08d1967057669a",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/rsl_rl/runners/on_policy_runner.py",
+      "upstream_sha256": "dec596b3d65ccaf4ac86bbe5b71d6aa62c0a89dfd80655ecbfe150e95b90d6b4",
+      "bytes": 13769,
+      "local_sha256": "dec596b3d65ccaf4ac86bbe5b71d6aa62c0a89dfd80655ecbfe150e95b90d6b4",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/storage/__init__.py",
+      "upstream_sha256": "0556c9198b6aadbe9d1e1b9abc4eeb37f7a6c13de26e85c7b24f11b3ee147a6d",
+      "bytes": 343,
+      "local_sha256": "9b3b55f9106f6816243fb6222838b1aa92f54f8eb6e95b755436a88b588b439f",
+      "modified": true
+    },
+    {
+      "path": "rsl_rl/rsl_rl/storage/rollout_storage.py",
+      "upstream_sha256": "0ad19bda4b39f06b869426a70462d438a46fdbffcf91d21a247eb203c049128e",
+      "bytes": 12165,
+      "local_sha256": "0ad19bda4b39f06b869426a70462d438a46fdbffcf91d21a247eb203c049128e",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/env/__init__.py",
+      "upstream_sha256": "b4c617f8535f521496d62b4b057e6523a6d2f83520e3c0ce3a0c2ee0ef028b5c",
+      "bytes": 1690,
+      "local_sha256": "b4c617f8535f521496d62b4b057e6523a6d2f83520e3c0ce3a0c2ee0ef028b5c",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/env/vec_env.py",
+      "upstream_sha256": "6e8f46bec6a4081f4248f010bf5641f71b51cdbaa0282bce76e6ef5580caace7",
+      "bytes": 2574,
+      "local_sha256": "6e8f46bec6a4081f4248f010bf5641f71b51cdbaa0282bce76e6ef5580caace7",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/utils/__init__.py",
+      "upstream_sha256": "6a29eb8996bfc2a2d799282851f6d23fbe446a9e743ad1aeb8031026c101183c",
+      "bytes": 1728,
+      "local_sha256": "6a29eb8996bfc2a2d799282851f6d23fbe446a9e743ad1aeb8031026c101183c",
+      "modified": false
+    },
+    {
+      "path": "rsl_rl/rsl_rl/utils/utils.py",
+      "upstream_sha256": "25c838cf59544d0e762fd5c15ebe00d94a1e2b4ee5b1480d0823713294126e03",
+      "bytes": 8876,
+      "local_sha256": "25c838cf59544d0e762fd5c15ebe00d94a1e2b4ee5b1480d0823713294126e03",
+      "modified": false
+    }
+  ],
+  "validation": {
+    "static": "passed",
+    "cpu_ppo": "4 synthetic environments x 24 steps; original network and PPO parameters; symmetry enabled; finite losses",
+    "isaac_gym": "not run: Isaac Gym unavailable locally; server SSH authentication failed",
+    "reward_terms": {
+      "action_rate": -0.05,
+      "alive": 1.0,
+      "ang_vel_xy": 0.2,
+      "ang_xz": -0.5,
+      "base_height": 1.5,
+      "collision": -2.0,
+      "contact": 0.3,
+      "default_hip_pos": -0.1,
+      "default_pos": -0.1,
+      "default_pos_reward": 0.5,
+      "dof_acc": -2.5e-07,
+      "dof_pos_limits": -2.0,
+      "feet_clearance": 0.4,
+      "feet_height_symmetry": -0.2,
+      "handstand_feet_height_exp": 5.0,
+      "handstand_feet_on_air": 0.4,
+      "handstand_orientation": -1.0,
+      "lin_vel_z": 0.2,
+      "orientation_symmetry": -0.5,
+      "symmetric_joints": -0.1,
+      "torques": -0.0002,
+      "tracking_ang_vel": 2.5,
+      "tracking_lin_vel": 2.5
+    }
+  }
+}
