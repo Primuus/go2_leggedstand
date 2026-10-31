@@ -5,7 +5,7 @@
       "destination": "resources/robots/go2/mujoco/go2.xml",
       "source_sha256": "6dd698b01ffb84f966feaea5b1eb1c674dad043717cbec4eb0b786f093ba9391",
       "bytes": 14878,
-      "local_sha256": "0ed6f1b30c746b6fcd20421866dcac18fe1c660975edc7b2c77ac50ce7842041"
+      "local_sha256": "e88384935575e223334fed07ad8bc02ffab675149ba84bb2dfba039698044864"
     },
     {
       "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/scene_flat.xml",
@@ -509,5 +509,14 @@
     "geometry_scope": "URDF primitives; Isaac Gym cylinder-to-capsule import option remains an engine-specific difference",
     "visual_meshes_modified": false,
     "training_code_modified": false
+  },
+  "upright_initialization": {
+    "date": "2026-11-01",
+    "base_height_m": 0.52,
+    "base_pitch_rad": -1.5707963267948966,
+    "home_joint_angles": "training default_joint_angles / descire_joint_angles",
+    "mechanical_parameters_changed": false,
+    "validation": "MuJoCo home qpos matches deployment reset; front feet z=0.67 m, rear soles z=0 m within 1e-10 m",
+    "documentation": "doc/参考关节与高度目标对齐.md"
   }
 }

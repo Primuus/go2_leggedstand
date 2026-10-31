@@ -139,7 +139,6 @@ class Go2_Handstand_Robot(BaseTask):
 
         Args:
             env_ids (list[int]): List of environment ids which must be reset
-            last_root_vel 这个变量没有重置，基座的线速度角速度
         """
         if len(env_ids) == 0:
             return
@@ -151,14 +150,21 @@ class Go2_Handstand_Robot(BaseTask):
             self.update_command_curriculum(env_ids)
         
         # reset robot states
-        self._reset_dofs(env_ids)# 关节角度设置为0.5 15 倍的默认关节角度。速度设置为0
-        self._reset_root_states(env_ids)#根节点位置设置 平地就默认位置，随机地形就要随机位置 线速度，角速度随机 -0.5 0.5
+        self._reset_dofs(env_ids)
+        self._reset_root_states(env_ids)
 
         self._resample_commands(env_ids)
 
         # reset buffers
+        self.actions[env_ids] = 0.
         self.last_actions[env_ids] = 0.
+        self.delayed_actions[env_ids] = 0.
         self.last_dof_vel[env_ids] = 0.
+        self.last_root_vel[env_ids] = self.root_states[env_ids, 7:13]
+        # Observations are computed immediately after reset, before another step.
+        self.base_lin_vel[env_ids] = quat_rotate_inverse(self.base_quat[env_ids], self.root_states[env_ids, 7:10])
+        self.base_ang_vel[env_ids] = quat_rotate_inverse(self.base_quat[env_ids], self.root_states[env_ids, 10:13])
+        self.projected_gravity[env_ids] = quat_rotate_inverse(self.base_quat[env_ids], self.gravity_vec[env_ids])
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
@@ -438,14 +444,13 @@ class Go2_Handstand_Robot(BaseTask):
 
     def _reset_dofs(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
-        Positions are randomly selected within 0.5:1.5 x default positions.
+        Positions use the upright reference pose without reset noise.
         Velocities are set to zero.
 
         Args:
             env_ids (List[int]): Environemnt ids
-            关节角度设置为0.5 15 倍的默认关节角度。速度设置为0
         """
-        self.dof_pos[env_ids] = self.default_dof_pos * torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
+        self.dof_pos[env_ids] = self.default_dof_pos
         self.dof_vel[env_ids] = 0.
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
@@ -455,10 +460,9 @@ class Go2_Handstand_Robot(BaseTask):
     def _reset_root_states(self, env_ids):
         """ Resets ROOT states position and velocities of selected environmments
             Sets base position based on the curriculum
-            Selects randomized base velocities within -0.5:0.5 [m/s, rad/s]
+            Uses the configured upright orientation and initial velocities.
         Args:
             env_ids (List[int]): Environemnt ids
-            根节点位置设置 平地就默认位置，随机地形就要随机位置 线速度，角速度随机 -0.5 0.5
         """
         # base position
         if self.custom_origins:#平地就不是，随机地形就要随机位置
@@ -468,8 +472,6 @@ class Go2_Handstand_Robot(BaseTask):
         else:
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
-        # base velocities
-        self.root_states[env_ids, 7:13] = torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
@@ -744,6 +746,9 @@ class Go2_Handstand_Robot(BaseTask):
         self.base_init_state = to_torch(base_init_state_list, device=self.device, requires_grad=False)
         start_pose = gymapi.Transform()
         start_pose.p = gymapi.Vec3(*self.base_init_state[:3])
+        start_pose.r = gymapi.Quat(*self.cfg.init_state.rot)
+        initial_dof_state = np.zeros(self.num_dof, dtype=gymapi.DofState.dtype)
+        initial_dof_state['pos'] = [self.cfg.init_state.default_joint_angles[name] for name in self.dof_names]
 
         self.joint_friction_coeffs = torch.ones(self.num_envs, 1, dtype=torch.float, device=self.device,requires_grad=False)
 
@@ -774,7 +779,7 @@ class Go2_Handstand_Robot(BaseTask):
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
-            pos = self.env_origins[i].clone()
+            pos = self.env_origins[i] + self.base_init_state[:3]
             pos[:2] += torch_rand_float(-1., 1., (2,1), device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
                 
@@ -783,6 +788,7 @@ class Go2_Handstand_Robot(BaseTask):
             actor_handle = self.gym.create_actor(env_handle, robot_asset, start_pose, self.cfg.asset.name, i, self.cfg.asset.self_collisions, 0)
             dof_props = self._process_dof_props(dof_props_asset, i)
             self.gym.set_actor_dof_properties(env_handle, actor_handle, dof_props)
+            self.gym.set_actor_dof_states(env_handle, actor_handle, initial_dof_state, gymapi.STATE_ALL)
             body_props = self.gym.get_actor_rigid_body_properties(env_handle, actor_handle)
             body_props = self._process_rigid_body_props(body_props, i)
             self.gym.set_actor_rigid_body_properties(env_handle, actor_handle, body_props, recomputeInertia=True)

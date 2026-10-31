@@ -69,15 +69,15 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "ba0284832864afccc82f65fd846d04d36f2a1286ddce4fd98997428e52791d65",
+      "local_sha256": "3c27ffc2c8d5d46dfdc6d31528cf5cf469cb2d0fb67ce6c6cbcde4eb4d864d02",
       "modified": true
     },
     {
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand.py",
       "upstream_sha256": "41187c22f0ffc58a4f636f163541bf3ba35a8617eb44250ef69595a10e6f5ddc",
       "bytes": 63544,
-      "local_sha256": "41187c22f0ffc58a4f636f163541bf3ba35a8617eb44250ef69595a10e6f5ddc",
-      "modified": false
+      "local_sha256": "eeb95a868a474e4ec3a3e7dba1d003a5db3b44582b23258dddfb07e16183844c",
+      "modified": true
     },
     {
       "path": "legged_gym/utils/terrain.py",
@@ -372,7 +372,54 @@
       ],
       "validation": "FK, soft joint limits, contacts, source reward functions, static load and action limits passed; no training run",
       "documentation": "doc/参考关节与高度目标对齐.md",
-      "server_sync": "pending: SSH authentication failed"
+      "server_sync": "pending: SSH authentication failed",
+      "subsequent_change": "default_joint_angles and initial state subsequently aligned by upright_initialization below"
+    },
+    "upright_initialization": {
+      "date": "2026-11-01",
+      "authorization": "User requested initial posture use reference angles",
+      "base_position_m": [
+        0,
+        0,
+        0.52
+      ],
+      "base_quaternion_xyzw": [
+        0,
+        -0.7071067811865476,
+        0,
+        0.7071067811865476
+      ],
+      "joint_angles": "default_joint_angles copies descire_joint_angles; shared reward reference, reset pose and action-zero target",
+      "changes": [
+        "Set actor creation position, rotation and DOF states",
+        "Remove reset joint-angle scaling and random root velocity",
+        "Clear reset action history and refresh body velocity/gravity observations",
+        "Align MuJoCo home and deployment initial pose"
+      ],
+      "unchanged": [
+        "reward formulas and weights",
+        "PD gains and action scale",
+        "PPO",
+        "observation/action dimensions",
+        "URDF mechanical parameters",
+        "other domain randomization"
+      ],
+      "validation": {
+        "mujoco_fk_and_reset": "passed",
+        "xml_home_matches_deployment": true,
+        "selected_environment_reset": "passed actual method bodies with mocked Gym setters",
+        "reward_methods_ast_unchanged": 29,
+        "python_compile": "passed",
+        "zero_action_1s": {
+          "base_height_m": 0.4424441315217133,
+          "upright_cosine": 0.918164074420929,
+          "finite_state": true
+        },
+        "isaac_gym": "not run: unavailable locally; SSH authentication failed"
+      },
+      "documentation": "doc/参考关节与高度目标对齐.md",
+      "server_sync": "pending: SSH authentication failed",
+      "training_started": false
     }
   }
 }
