@@ -1,0 +1,151 @@
+{
+  "files": [
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/go2.xml",
+      "destination": "resources/robots/go2/mujoco/go2.xml",
+      "source_sha256": "6dd698b01ffb84f966feaea5b1eb1c674dad043717cbec4eb0b786f093ba9391",
+      "bytes": 14878,
+      "local_sha256": "f4953bb3f7fd396ba38aedbbb9985b256b3492512651f931ef021c46324160de"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/scene_flat.xml",
+      "destination": "resources/robots/go2/mujoco/scene_flat.xml",
+      "source_sha256": "009af98573b84c819b2eb574de6b9ed23f971fd54e6e4fdcf6cace0e89982b49",
+      "bytes": 867,
+      "local_sha256": "009af98573b84c819b2eb574de6b9ed23f971fd54e6e4fdcf6cace0e89982b49"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/base_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/base_0.obj",
+      "source_sha256": "8cdc53719002a5ee737d867904e534a6d6fa930b616bdcc1b3131e577d4e46c0",
+      "bytes": 1330465,
+      "local_sha256": "8cdc53719002a5ee737d867904e534a6d6fa930b616bdcc1b3131e577d4e46c0"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/base_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/base_1.obj",
+      "source_sha256": "39d2f4724ff64dd5a0640c308fd98902a2946660a8d033ec8dbf368fd5af0dd6",
+      "bytes": 811791,
+      "local_sha256": "39d2f4724ff64dd5a0640c308fd98902a2946660a8d033ec8dbf368fd5af0dd6"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/base_2.obj",
+      "destination": "resources/robots/go2/mujoco/obj/base_2.obj",
+      "source_sha256": "29cae463f95d678e4ede863c36c9b19b0d356b8340412add10670d70bdcc3095",
+      "bytes": 294090,
+      "local_sha256": "29cae463f95d678e4ede863c36c9b19b0d356b8340412add10670d70bdcc3095"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/base_3.obj",
+      "destination": "resources/robots/go2/mujoco/obj/base_3.obj",
+      "source_sha256": "f51ba43bf300e68957a0c1aa83eaf3e4926f4ac7e64a0d6c33ae5d21fcbcf5f6",
+      "bytes": 379093,
+      "local_sha256": "f51ba43bf300e68957a0c1aa83eaf3e4926f4ac7e64a0d6c33ae5d21fcbcf5f6"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/base_4.obj",
+      "destination": "resources/robots/go2/mujoco/obj/base_4.obj",
+      "source_sha256": "49ddec0129546e5dd2075d5beacf7f207baa2860aeff7626818e64d2efbf3821",
+      "bytes": 7776234,
+      "local_sha256": "49ddec0129546e5dd2075d5beacf7f207baa2860aeff7626818e64d2efbf3821"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/hip_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/hip_0.obj",
+      "source_sha256": "cc29932ab4d251ce3f72389ec4c1f757e44eee138b87e772b648c2bc76b506cd",
+      "bytes": 2863864,
+      "local_sha256": "cc29932ab4d251ce3f72389ec4c1f757e44eee138b87e772b648c2bc76b506cd"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/hip_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/hip_1.obj",
+      "source_sha256": "3fd5bd9b2ef6abe622c0739d3c67eaa1679b19b47132951972c4892a779ea7cf",
+      "bytes": 2767918,
+      "local_sha256": "3fd5bd9b2ef6abe622c0739d3c67eaa1679b19b47132951972c4892a779ea7cf"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/thigh_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/thigh_0.obj",
+      "source_sha256": "bb3edfe6a7b04f4f4dff1ce7b05d426ddce941e276cc6372fb542055893c71ec",
+      "bytes": 2841868,
+      "local_sha256": "bb3edfe6a7b04f4f4dff1ce7b05d426ddce941e276cc6372fb542055893c71ec"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/thigh_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/thigh_1.obj",
+      "source_sha256": "3a631822f9f7d2114b1b79dcdff5abf95103630abb7d91d1f3b8b18117132ed2",
+      "bytes": 1491320,
+      "local_sha256": "3a631822f9f7d2114b1b79dcdff5abf95103630abb7d91d1f3b8b18117132ed2"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/thigh_mirror_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/thigh_mirror_0.obj",
+      "source_sha256": "07abaedce761f1dd48647384ac14ba1959276bc78d5a2a62051e8f1c6093933b",
+      "bytes": 2817674,
+      "local_sha256": "07abaedce761f1dd48647384ac14ba1959276bc78d5a2a62051e8f1c6093933b"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/thigh_mirror_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/thigh_mirror_1.obj",
+      "source_sha256": "db984a3e983eabbc9b38183427cca9ab0bb3bdb049f9eab030e06edda36579d6",
+      "bytes": 1482261,
+      "local_sha256": "db984a3e983eabbc9b38183427cca9ab0bb3bdb049f9eab030e06edda36579d6"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/calf_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/calf_0.obj",
+      "source_sha256": "4a818cd563c5b7e2a271504442d05fd777d38cbaa028d4a10ad29c9f87bb355e",
+      "bytes": 877174,
+      "local_sha256": "4a818cd563c5b7e2a271504442d05fd777d38cbaa028d4a10ad29c9f87bb355e"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/calf_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/calf_1.obj",
+      "source_sha256": "51950c3a153ae3208592df86ea11c9d6756f8f645ebca5caf6910c61aeb03817",
+      "bytes": 326865,
+      "local_sha256": "51950c3a153ae3208592df86ea11c9d6756f8f645ebca5caf6910c61aeb03817"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/calf_mirror_0.obj",
+      "destination": "resources/robots/go2/mujoco/obj/calf_mirror_0.obj",
+      "source_sha256": "6dc0406207a1c08a5953fd5962aca1a270fd06593d30d100205e05c1b32d4af2",
+      "bytes": 876538,
+      "local_sha256": "6dc0406207a1c08a5953fd5962aca1a270fd06593d30d100205e05c1b32d4af2"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/calf_mirror_1.obj",
+      "destination": "resources/robots/go2/mujoco/obj/calf_mirror_1.obj",
+      "source_sha256": "f84f5af90b914633165beb3a5493ee499169144c5797dcf04c6eb5842f74b31a",
+      "bytes": 327261,
+      "local_sha256": "f84f5af90b914633165beb3a5493ee499169144c5797dcf04c6eb5842f74b31a"
+    },
+    {
+      "source": "/home/ry/project/quadruped/src/controller/rl/resources/robots/go2/obj/foot.obj",
+      "destination": "resources/robots/go2/mujoco/obj/foot.obj",
+      "source_sha256": "df9e78a7c0110d02557439010f2a5f11f0ec4fd907b32704145dbd6aa7affc0b",
+      "bytes": 1144729,
+      "local_sha256": "df9e78a7c0110d02557439010f2a5f11f0ec4fd907b32704145dbd6aa7affc0b"
+    }
+  ],
+  "adaptations": [
+    "Set geom/foot sliding friction 0.4 -> 0.6 to match upstream MuJoCo model; retain named actuator mapping for local FR/FL/RR/RL order.",
+    "Calf motor ctrlrange 45.43 -> 35.55 N m to match training URDF effort; hip/thigh remain 23.7 N m."
+  ],
+  "deployment_reference": "/home/ry/project/quadruped/src/controller/rl/rl_controller/deploy_mujoco_rl.py",
+  "urdf_matches_quadruped_and_quadruped_train": true,
+  "mass_kg": {
+    "training_urdf": 15.019,
+    "reused_mjcf": 15.206408,
+    "inertial_parameters_modified": false
+  },
+  "validation": {
+    "joint_order_limits_and_torque_limits": "passed against training URDF",
+    "observation_parity": "passed against upstream method for 5 synthetic states; atol 2e-7",
+    "torchscript": "untrained original actor structure, 0.2 s simulation; rejects 270D policy",
+    "physics": "2 s PD test; finite state",
+    "rendering": "EGL 320x240 passed",
+    "trained_policy": "not available",
+    "interactive_window": "not tested",
+    "server_sync": "SSH authentication failed"
+  }
+}

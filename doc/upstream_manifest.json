@@ -312,5 +312,10 @@
       "tracking_ang_vel": 2.5,
       "tracking_lin_vel": 2.5
     }
+  },
+  "local_deployment": {
+    "manifest": "doc/local_asset_manifest.json",
+    "entrypoint": "deploy_mujoco/sim2sim_go2_handstand.py",
+    "training_files_changed": false
   }
 }
