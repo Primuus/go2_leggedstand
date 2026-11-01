@@ -1,10 +1,14 @@
 # Copyright (c) 2026 Yu Songmin
 # SPDX-License-Identifier: MIT
-# Verbatim method extraction from the pinned reference task; see doc/upstream_manifest.json.
+# Extracted reference methods with authorized stand/walk refinements; see doc/upstream_manifest.json.
 import torch
 
 
 class ReferenceRewards:
+    def _moving_command(self):
+        return ((torch.linalg.vector_norm(self.commands[:, :2], dim=1) > self.cfg.commands.standing_lin_threshold)
+                | (self.commands[:, 2].abs() > self.cfg.commands.standing_ang_threshold))
+
     def _get_phase(self):
         cycle_time = self.cfg.rewards.cycle_time
         phase = (self.episode_length_buf * self.dt)%cycle_time/cycle_time
@@ -75,7 +79,9 @@ class ReferenceRewards:
         x_error = torch.square(self.commands[:, 0] + self.base_lin_vel[:, 2])#站立起来的话，本体的x轴对应世界系的z，本体z轴对应世界系的-x
         y_error = torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1])
         # print(torch.mean(self.rew_hanstand),self.rew_hanstand.shape)
-        return torch.exp(-(y_error+x_error)/self.cfg.rewards.tracking_sigma)*(torch.mean(self.rew_hanstand)>0.70)
+        sigma = torch.where(self._moving_command(), self.cfg.rewards.tracking_lin_sigma,
+                            self.cfg.rewards.tracking_stand_sigma)
+        return torch.exp(-(y_error+x_error)/sigma)*(torch.mean(self.rew_hanstand)>0.70)
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw) 
@@ -83,8 +89,10 @@ class ReferenceRewards:
         return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)*(torch.mean(self.rew_hanstand)>0.70)
 
     def _reward_default_pos(self):
-        # Penalize motion at zero commands
-        return torch.sum(torch.abs(self.dof_pos - self.descire_joint_pos), dim=1)
+        # Keep the front-leg reference; relax the rear legs only during walking.
+        error = torch.abs(self.dof_pos - self.descire_joint_pos)
+        rear_factor = torch.where(self._moving_command(), self.cfg.rewards.moving_rear_posture_factor, 1.)
+        return error[:, :6].sum(dim=1) + rear_factor * error[:, 6:].sum(dim=1)
 
     def _reward_default_pos_reward(self):
         # Penalize motion at zero commands
@@ -141,15 +149,16 @@ class ReferenceRewards:
         # feet height should larger than target feet height at the peak
         target_height=(torch.abs(torch.sin(2*torch.pi*phase))*self.cfg.rewards.target_foot_height)
         # print(left_feet_height.shape,right_feet_height.shape,target_height.shape)
-        rew=torch.exp(-torch.abs(left_feet_height-target_height)*10)*swing_mask[:,0]
+        rew=torch.exp(-torch.abs(left_feet_height-target_height)*self.cfg.rewards.feet_clearance_error_scale)*swing_mask[:,0]
         # print(rew[0],torch.sum(torch.abs(left_feet_height-target_height),dim=1)[0])
-        rew+=torch.exp(-torch.abs(right_feet_height-target_height)*10)*swing_mask[:,1]
+        rew+=torch.exp(-torch.abs(right_feet_height-target_height)*self.cfg.rewards.feet_clearance_error_scale)*swing_mask[:,1]
         # print(rew.shape,left_feet_height.shape)
-        return rew*(torch.mean(self.rew_hanstand)>0.70)
+        return rew*(torch.mean(self.rew_hanstand)>0.70)*self._moving_command()
 
     def _reward_contact(self):
         contact = self.contact_forces[:, self.contact_foot_indices, 2] > 1
-        return (torch.sum(contact,dim=1)==1)*(self.rew_hanstand>0.70)
+        target_count = torch.where(self._moving_command(), 1, 2)
+        return (torch.sum(contact,dim=1)==target_count)*(self.rew_hanstand>0.70)
 
     def _reward_feet_air_time(self):
         # Reward long steps
@@ -172,7 +181,8 @@ class ReferenceRewards:
         # Multiply the right side hips by -1 to match the sign of the left side:
         dof[:,1,0] *= -1   # FR hip
         dof[:,3,0] *= -1   # RR hip
-        err = torch.sum(torch.abs(dof[:,0,:] - dof[:,1,:]),axis=1) + torch.sum(torch.abs(dof[:,2,:] - dof[:,3,:]),axis=1)
+        rear_factor = torch.where(self._moving_command(), self.cfg.rewards.moving_rear_posture_factor, 1.)
+        err = torch.sum(torch.abs(dof[:,0,:] - dof[:,1,:]),axis=1) + rear_factor * torch.sum(torch.abs(dof[:,2,:] - dof[:,3,:]),axis=1)
         return err*(self.rew_hanstand>0.70)
 
     def _reward_orientation_symmetry(self):

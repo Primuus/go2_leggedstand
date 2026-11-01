@@ -51,9 +51,7 @@ class State(ReferenceRewards):
         for i, name in enumerate(("lin_vel_x", "lin_vel_y", "ang_vel_yaw", "heading")):
             lo, hi = getattr(REF.commands.ranges, name)
             self.commands[ids, i] = torch.empty(len(ids), device=self.device).uniform_(lo, hi)
-        self.commands[ids[torch.rand(len(ids), device=self.device) < .20]] = 0
-        self.commands[ids[torch.rand(len(ids), device=self.device) > .9], :2] = 0
-        self.commands[ids, :2] *= (self.commands[ids, :2].norm(dim=1) > .1).unsqueeze(1)
+        self.commands[ids[torch.rand(len(ids), device=self.device) < REF.commands.standing_probability]] = 0
 
     def refresh(self):
         env, data = self.env, self.robot.data

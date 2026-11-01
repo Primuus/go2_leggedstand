@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "f1bb40cf927fb6f0a0e98353bc3a965b9dc6829d33f280ca2a2c53852b05b922",
+      "local_sha256": "24f8111a5fd833e58e628fff9810ade0e0bb9921ec072da45abdec2eaddba857",
       "modified": true
     },
     {
@@ -477,18 +477,18 @@
         "go2_hindstand_lab/__init__.py": "7dacb23e69cc3a908bc80436a77173d3e411ac9407b6774c89f39d355fec343d",
         "go2_hindstand_lab/adapter.py": "674bb0a058913b76afe925c0686428478aae239f9ff81616a6fba4f8e3ae4301",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
-        "go2_hindstand_lab/reference_rewards.py": "5f560b652d461cece60ddd2682ef0a6021fa57735feb4c7a290cbbf92543b6b2",
-        "go2_hindstand_lab/task.py": "412407758b2463dc6479cb07920a5183e3f86bdd3d43fa87a68475deb3d7a9f3",
-        "go2_hindstand_lab/validation.py": "cac43d9a3476a1511e0f7158b31cb2c12f491be0b1b7e73838c2e21db9dacb29",
+        "go2_hindstand_lab/reference_rewards.py": "9dd4ad09ced2249837ee7034cf7d2f0621e8479e941b70ea45b881bd6e2ce5c1",
+        "go2_hindstand_lab/task.py": "9155bfa21c85c14d11691a9344b99f1c5227cb4709deb7376f27e18578834b81",
+        "go2_hindstand_lab/validation.py": "1dc1aed04331742d2e8df892aeac6c79a2afc45eae8f77849b307e5b6066c5e7",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "ba4979772ca9be377eaaec8ee83637fb9efa4c6c0233a542d414dc2c251beb19"
+        "scripts/train_lab.py": "91e214d320b14a1b29c42c456c2c89f99cc6fd0a7717b6ec7accf18ad5875ac1"
       },
       "preserved": [
         "45/86 observations, 12 ordered actions",
-        "23 active reward formulas and weights",
+        "23 active reward terms; five formulas and selected weights later refined with user authorization",
         "bundled PPO, network and mirror loss",
         "0.52 m reference reset; action-zero reference joints",
-        "fixed physics; observation noise; source command sampling ranges"
+        "fixed physics; observation noise"
       ],
       "explicit_adaptations": [
         "wxyz quaternion API; named joint/body mappings",
@@ -504,6 +504,40 @@
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
       "latest_training_report": "doc/2000轮续训与本地验证.md"
+    },
+    "stand_walk_refinement": {
+      "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
+      "reward_count": 23,
+      "observation_dims": [
+        45,
+        86
+      ],
+      "changed_reward_methods": [
+        "tracking_lin_vel",
+        "default_pos",
+        "feet_clearance",
+        "contact",
+        "symmetric_joints"
+      ],
+      "phase": "Original _get_phase/_get_gait_phase and cycle_time=1.6 unchanged; no phase observation",
+      "configuration": {
+        "feet_clearance_weight": 2.0,
+        "target_foot_height": 0.06,
+        "feet_clearance_error_scale": 30.0,
+        "tracking_lin_vel_weight": 4.0,
+        "tracking_lin_sigma": 0.04,
+        "tracking_stand_sigma": 0.0025,
+        "moving_rear_posture_factor": 0.2,
+        "standing_probability": 0.35,
+        "forward_range": [
+          0.1,
+          0.35
+        ],
+        "heading_command": false
+      },
+      "documentation": "doc/站立与抬腿优化及3000轮验证.md",
+      "local_validation": "5 CPU regression tests passed; 23 terms, only 5 reward ASTs changed, both phase ASTs unchanged",
+      "server_validation": "64 environments, restored model_2000, 3 PPO updates, exit 0, preflight and finite parameters/scalars passed; exported Actor matches checkpoint"
     }
   },
   "server_sync": {

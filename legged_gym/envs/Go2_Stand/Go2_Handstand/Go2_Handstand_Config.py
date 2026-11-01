@@ -46,12 +46,15 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         max_curriculum = 1.
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 10. # time before command are changed[s]
-        heading_command = True # if true: compute ang vel command from heading error
+        heading_command = False # This refinement stage trains true standstill and straight walking.
+        standing_probability = 0.35
+        standing_lin_threshold = 0.05
+        standing_ang_threshold = 0.1
         class ranges:
-            lin_vel_x = [-0.2,0.6] # min max [m/s]
+            lin_vel_x = [0.1, 0.35] # min max [m/s], non-standing samples
             lin_vel_y = [-0.0, 0.0]   # min max [m/s]
-            ang_vel_yaw = [-0.4, 0.4]    # min max [rad/s]
-            heading = [-3.14, 3.14]
+            ang_vel_yaw = [0.0, 0.0]    # min max [rad/s]
+            heading = [0.0, 0.0]
 
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.52] # x,y,z [m]
@@ -166,7 +169,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         soft_torque_limit = 0.95
         class scales:
             termination = -0.0
-            tracking_lin_vel = 2.5
+            tracking_lin_vel = 4.0
             tracking_ang_vel = 2.5
             lin_vel_z = 0.2
             ang_vel_xy = 0.2
@@ -181,7 +184,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
             action_rate = -0.05
             default_pos =-0.1####
             default_hip_pos=-0.1
-            feet_clearance=0.4
+            feet_clearance=2.0
             ang_xz=-0.5
             contact=0.3
             symmetric_joints=-0.1
@@ -192,7 +195,11 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
             dof_pos_limits=-2.0
             alive=1.0
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
-        tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
+        tracking_sigma = 0.25 # Angular tracking denominator, unchanged.
+        tracking_lin_sigma = 0.04 # Squared velocity error denominator while moving.
+        tracking_stand_sigma = 0.0025 # Squared velocity error denominator at standstill.
+        moving_rear_posture_factor = 0.2 # Effective rear penalty: -0.1 * 0.2 = -0.02.
+        feet_clearance_error_scale = 30.0 # Inverse metres; reference value was 10.
         base_height_target = 0.52#0.25
         target_foot_height=0.06
         max_contact_force = 200. # forces above this value are penalized

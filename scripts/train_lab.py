@@ -70,6 +70,7 @@ def main():
     train["runner"]["max_iterations"] = args.max_iterations
     train["runner"]["save_interval"] = args.save_interval
     (log_dir / "training_config.json").write_text(json.dumps(train, indent=2))
+    (log_dir / "env_config.json").write_text(json.dumps(to_dict(load_config()), indent=2))
     sources = list((ROOT / "go2_hindstand_lab").glob("*.py")) + [Path(__file__), ROOT / "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py"]
     provenance = {"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,

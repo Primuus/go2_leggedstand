@@ -45,6 +45,14 @@ def validate(env):
     assert env.action_manager.get_term("joints")._joint_names == JOINT_NAMES
     assert len(SCALES) == 23
     assert env.observation_manager.group_obs_dim == {"policy": (45,), "critic": (86,)}
+    # This experiment samples true standstill or straight forward commands.
+    assert not REF.commands.heading_command
+    assert torch.all(s.commands[:, 1:] == 0)
+    moving = s._moving_command()
+    assert torch.all(s.commands[~moving, 0] == 0)
+    lo, hi = REF.commands.ranges.lin_vel_x
+    assert torch.all((s.commands[moving, 0] >= lo) & (s.commands[moving, 0] <= hi))
+    assert torch.all(s._reward_feet_clearance()[~moving] == 0)
     # Check the control action offset and explicit PD, independent of actor output.
     env.action_manager.process_action(torch.zeros(env.num_envs, 12, device=env.device))
     env.action_manager.apply_action()
@@ -62,7 +70,10 @@ def validate(env):
               "observation_dims": [45, 86], "reward_count": 23, "initial_reward_scores": scores,
               "zero_action_initial_pd": "passed", "urdf_sha256": metadata["urdf_sha256"],
               "inertia_eigenvalue_max_error": float((actual_eigenvalues-expected_eigenvalues).abs().max()),
-              "fixed_joint_parameters": "damping=.1, armature=.01, friction=.2 verified"}
+              "fixed_joint_parameters": "damping=.1, armature=.01, friction=.2 verified",
+              "commands": {"standing": int((~moving).sum()), "walking": int(moving.sum()),
+                           "yaw_and_lateral_zero": True, "forward_range": [lo, hi]},
+              "reward_scales": SCALES, "standing_clearance_reward": "zero verified"}
     for _ in range(10):
         obs, rewards, _, _, _ = env.step(torch.zeros(env.num_envs, 12, device=env.device))
         assert torch.isfinite(obs["critic"]).all() and torch.isfinite(rewards).all()
