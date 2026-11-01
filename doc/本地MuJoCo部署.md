@@ -24,6 +24,10 @@
 本机已存在的 `RL` 环境可运行，已确认 MuJoCo 3.8.1、PyTorch 2.12.0+cpu。无需新建环境或安装额外输入库。在工程根目录运行：
 
 ```bash
+# 静态查看训练初始姿态，无需策略、不推进物理；鼠标旋转/缩放，关闭窗口退出
+/home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
+  --pose --duration 3600
+
 # 无策略也可检查模型、PD、接触仿真；此模式从直立参考姿态开始，仅验证 PD，不保证持续平衡
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
   --check --headless --duration 2
@@ -40,7 +44,7 @@
   --report logs/sim2sim/forward.json
 ```
 
-`--policy` 与 `--check` 必须二选一。`--policy` 读取导出的 TorchScript Actor，不是训练 checkpoint 字典。训练端使用 `legged_gym/scripts/play.py` 导出，详见 [工程说明](工程说明.md)。当前没有训练好的直立策略，不能使用旧 270 维策略代替。
+`--policy`、`--check` 与 `--pose` 必须三选一。`--pose` 使用训练配置的初始高度、机身朝向和关节角，保持静态供观察，不代表已经实现动态平衡。`--policy` 读取导出的 TorchScript Actor，不是训练 checkpoint 字典。当前 Isaac Lab 训练入口结束时自动导出 `exported/policy.pt`，详见 [Isaac Lab 验证说明](IsaacLab适配与小步验证.md)。当前没有训练好的直立策略，不能使用旧 270 维策略代替。
 
 窗口获取焦点后：W/S 增减前向命令，Q/E 增减转向命令，空格清零命令，R 重置。前向键盘范围 −0.2～0.6 m/s，转向 −1～1 rad/s；横向为零。命令行可显式指定其他有限速度用于测试。键盘使用 MuJoCo 窗口回调，不需要 evdev 权限、pygame 或 pynput。
 
@@ -53,7 +57,7 @@
 - 在 5 组不同姿态、关节状态下，与参考环境实际 `compute_observations` 的 45 维结果一致，容差 2e−7；Critic 输入为 86 维。部署进程未导入 Isaac Gym。
 - 临时导出原网络结构的随机初始化 Actor，验证 TorchScript 加载、推理和 0.2 秒物理循环；270 维旧接口被拒绝。临时测试权重已删除，没有用随机策略宣称训练效果。
 - EGL 离屏渲染用于检查场景和网格；交互窗口/键盘仍需用户图形会话实际体验。
-- 尚无训练好的直立策略，未验证直立行走成功率。服务器 SSH 仍返回认证失败，新增工程尚未同步到容器。
+- 尚无训练好的直立策略，未验证直立行走成功率。工程已同步服务器并完成 Isaac Lab 小步验证，未开始正式训练。
 
 ## URDF 机械参数对齐方法与验证
 

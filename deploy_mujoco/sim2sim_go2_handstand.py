@@ -110,16 +110,16 @@ class Runner:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--policy", type=Path, help="Exported 45-input TorchScript policy")
-    parser.add_argument("--check", action="store_true", help="Check model/PD only; does not test a learned policy")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--policy", type=Path, help="Exported 45-input TorchScript policy")
+    mode.add_argument("--check", action="store_true", help="Check model/PD only; does not test a learned policy")
+    mode.add_argument("--pose", action="store_true", help="View the initial reference pose without advancing physics")
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--duration", type=float, default=60.)
     parser.add_argument("--speed", type=float, default=0.)
     parser.add_argument("--yaw-rate", type=float, default=0.)
     parser.add_argument("--report", type=Path, help="Write final diagnostic JSON")
     args = parser.parse_args()
-    if (args.policy is None) == (not args.check):
-        parser.error("Select exactly one of --policy or --check")
     if not math.isfinite(args.duration) or args.duration <= 0:
         parser.error("--duration must be finite and positive")
     if not math.isfinite(args.speed) or not math.isfinite(args.yaw_rate):
@@ -130,7 +130,8 @@ def main():
     runner.reset_requested = False
     print(f"MuJoCo {mujoco.__version__}: 45 obs, 12 actions, "
           f"dt={runner.cfg.sim.dt}, decimation={runner.cfg.control.decimation}")
-    print("PD/model check only" if args.check else f"Policy: {args.policy}")
+    print("Static initial pose (physics paused)" if args.pose else
+          "PD/model check only" if args.check else f"Policy: {args.policy}")
     print("W/S: forward command; Q/E: yaw; Space: zero command; R: reset")
     context = nullcontext(None)
     if not args.headless:
@@ -139,6 +140,11 @@ def main():
     samples = []
     start_pos = runner.data.qpos[:3].copy()
     with context as viewer:
+        if viewer is not None:
+            viewer.cam.lookat[:] = runner.data.qpos[:3]
+            viewer.cam.distance = 1.6
+            viewer.cam.azimuth = 135.
+            viewer.cam.elevation = -15.
         dt = runner.cfg.sim.dt * runner.cfg.control.decimation
         for _ in range(math.ceil(args.duration / dt)):
             begin = time.monotonic()
@@ -149,15 +155,16 @@ def main():
                 runner.reset_requested = False
                 start_pos = runner.data.qpos[:3].copy()
                 samples.clear()
-            runner.step()
+            if not args.pose:
+                runner.step()
             samples.append((runner.data.qpos[2], -runner.observation()[3]))
             if viewer is not None:
-                viewer.cam.lookat[:] = runner.data.qpos[:3]
-                viewer.cam.distance = 2.5
+                if not args.pose:
+                    viewer.cam.lookat[:] = runner.data.qpos[:3]
                 viewer.sync()
                 time.sleep(max(0., dt - (time.monotonic() - begin)))
     report = {
-        "mode": "model_pd_check" if args.check else "policy",
+        "mode": "initial_pose" if args.pose else "model_pd_check" if args.check else "policy",
         "simulated_seconds_since_reset": float(runner.data.time),
         "command": runner.command.tolist(),
         "displacement_world_m": (runner.data.qpos[:3] - start_pos).tolist(),
