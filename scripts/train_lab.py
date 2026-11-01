@@ -17,6 +17,8 @@ parser.add_argument("--terrain", choices=("flat", "rolling"), default="flat")
 parser.add_argument("--terrain_seed", type=int, default=1)
 parser.add_argument("--terrain_max_level", type=int, default=4)
 parser.add_argument("--terrain_initial_level", type=int, default=0)
+parser.add_argument("--terrain_min_level", type=int, default=0)
+parser.add_argument("--terrain_no_flat", action="store_true", help="Assign every environment to a rolling lane")
 parser.add_argument("--terrain_eval_level", type=int, help="Freeze all rolling lanes at this level for evaluation/validation")
 parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
@@ -84,7 +86,8 @@ def main():
     print("TRAIN_LOG_DIR", log_dir, flush=True)
     cfg = EnvCfg()
     cfg.scene.num_envs, cfg.sim.device, cfg.seed = args.num_envs, args.device, args.seed
-    settings = TerrainSettings(args.terrain, args.terrain_seed, args.terrain_max_level, args.terrain_initial_level)
+    settings = TerrainSettings(args.terrain, args.terrain_seed, args.terrain_max_level, args.terrain_initial_level,
+                               args.terrain_min_level, not args.terrain_no_flat)
     configure_terrain(cfg, settings)
     env = Environment(cfg=cfg)
     if args.terrain_eval_level is not None:

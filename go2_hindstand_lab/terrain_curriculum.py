@@ -4,8 +4,8 @@ from .terrain_profile import COLUMNS
 
 
 class RollingCurriculum:
-    def __init__(self, count, device, max_level=4, window=20):
-        self.max_level, self.window = max_level, window
+    def __init__(self, count, device, max_level=4, window=20, min_level=0):
+        self.max_level, self.window, self.min_level = max_level, window, min_level
         self.success = torch.zeros(count, window, dtype=torch.bool, device=device)
         self.count = torch.zeros(count, dtype=torch.long, device=device)
         self.streak = torch.zeros_like(self.count)
@@ -47,7 +47,7 @@ class RollingCurriculum:
             up &= columns >= COLUMNS//2
             down &= columns >= COLUMNS//2
             up &= levels < self.max_level
-            down &= levels > 0
+            down &= levels > self.min_level
             changed = up | down
             self.success[changed] = False
             self.count[changed] = 0

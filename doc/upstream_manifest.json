@@ -483,16 +483,16 @@
         "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
         "go2_hindstand_lab/reference_rewards.py": "591c3c8127b02917477998fafdc0e0372ef121cea86a98c6dc861af1e3b96067",
         "go2_hindstand_lab/task.py": "b1308f703c61519cb59d9116aebe08ce9ba568477a42251d43a649b8d46de1e7",
-        "go2_hindstand_lab/validation.py": "535181bb0a41c363e5183ce6cc640746abb873c119aea145ad40f803b30d8af8",
+        "go2_hindstand_lab/validation.py": "c7fe74c97186ccff0d6ddd0233d46560875d5dc11c23407750ffd874e56da354",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "649177196e1d7f7570770cc70af26da8e34718b96a0b333ea8f2e6ca0fe02304",
+        "scripts/train_lab.py": "84f40df264da3c586fe7a692dda5280952373588feaa49a3d482937285e9d114",
         "scripts/eval_mujoco.py": "5c6397603fea26a6afbfb5d2d1f4fb7e72edfbf3626a0f27f60bac36f5154d9d",
         "deploy_mujoco/sim2sim_go2_handstand.py": "baccef261b82364d0874a9a6a1741239eac379b54cfbdca5eec296e4f0cee2ef",
         "go2_hindstand_lab/gait_events.py": "790cb820a4134e2a2014b8ec1a09b094600a4ad5b81318f06e7d6155a985fe10",
         "go2_hindstand_lab/legacy_events.py": "e1ac1af7217106c6cc9cdda5a47a0aab7d1010790a8aaa3be99337ce106cd086",
-        "go2_hindstand_lab/terrain_curriculum.py": "430c4ea448a82290a9f80ca691c7609a6f478a2701399f3923a1c1899767359f",
-        "go2_hindstand_lab/terrain_profile.py": "8fcb2d5bd7b4780602cf3265df16dda56785f3fe72489a241f543d7238ce974b",
-        "go2_hindstand_lab/terrain_lab.py": "e01738159e288b6604ef07b7cbbf2cf9f9dee9c16901256d9b5f574a8dff1f68",
+        "go2_hindstand_lab/terrain_curriculum.py": "596c7d8eed6bdc0c9e614a350703aa0fced6a01d1b48abf3b26b6161fb2bb0fb",
+        "go2_hindstand_lab/terrain_profile.py": "f1f91c783178846a525dc55f008e31a5b1bd705e64d20999493d4125f3562139",
+        "go2_hindstand_lab/terrain_lab.py": "69daf956784c3e6b3789359a5415ba371792bcbcb2cf3d1423c4e21955a9e92a",
         "go2_hindstand_lab/training_runner.py": "41492da095d2b33e9eef55a1200ce4b4887d1a9e11ebdc7a828ae31e0dec4140",
         "go2_hindstand_lab/swing_reference.py": "ed26fd456fdf2a5ab47c21dc1e682b50557154adaf3bab6f1dd9c7a9d66ac52f",
         "deploy_mujoco/terrain.py": "4405ccd164693f7ae419d3f0678dee81b3ab95eb9a1b910d546cd5067a23f025"
@@ -1031,5 +1031,22 @@
     },
     "checkpoint_resume": "Full training/checkpoint roundtrip remains pending",
     "server_sync_status": "Direct overwrite from local authorized by user; Isaac Lab64-env preflight passed; no PPO updates"
+  },
+  "all_l1_training_300": {
+    "authorization": "User selected model5201 and explicitly excluded reserved flat training environments",
+    "start": 5201,
+    "target": 5501,
+    "requested_updates": 300,
+    "num_envs": 4096,
+    "terrain": {
+      "mode": "rolling",
+      "seed": 1,
+      "initial_level": 1,
+      "min_level": 1,
+      "max_level": 1,
+      "keep_flat": false
+    },
+    "status": "validated and ready to start",
+    "report": "doc/L1起伏地形300轮续训.md"
   }
 }

@@ -69,7 +69,13 @@ def validate(env):
     expected_front_score = torch.where(s._moving_command(), REF.rewards.moving_front_height_factor, 1.)
     torch.testing.assert_close(s._reward_handstand_feet_height_exp(), expected_front_score, rtol=1e-4, atol=1e-5)
     torch.testing.assert_close(s.body_weight, torch.full_like(s.body_weight, metadata["mass"] * abs(REF.sim.gravity[2])), rtol=1e-5, atol=1e-5)
-    report = {"mass_kg": float(actual_mass[0]), "joint_names": JOINT_NAMES, "feet": FOOT_NAMES,
+    terrain_report = {"settings": s.ground.settings.to_dict(),
+        "level_counts": {str(level): int((s.ground.levels == level).sum()) for level in range(5)},
+        "flat_lane_count": int((s.ground.columns < 5).sum())}
+    if s.ground.settings.mode == "rolling" and not s.ground.settings.keep_flat:
+        assert terrain_report["flat_lane_count"] == 0
+        assert torch.all(s.ground.levels >= s.ground.settings.min_level)
+    report = {"terrain": terrain_report, "mass_kg": float(actual_mass[0]), "joint_names": JOINT_NAMES, "feet": FOOT_NAMES,
               "native_joint_names": robot.joint_names, "native_body_names": robot.body_names,
               "initial_base_height_m": float(root_height[0]), "initial_front_foot_height_m": front[0].tolist(),
               "initial_hind_sole_height_m": rear_soles[0].tolist(),

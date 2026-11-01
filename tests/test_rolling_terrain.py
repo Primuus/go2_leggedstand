@@ -3,13 +3,30 @@ import unittest
 from pathlib import Path
 import numpy as np
 import torch
-from go2_hindstand_lab.terrain_profile import profile, GroundProfiles, SLOPE_DEGREES, SPACING
+from go2_hindstand_lab.terrain_profile import profile, GroundProfiles, SLOPE_DEGREES, SPACING, TerrainSettings, initial_terrain_assignment
 from go2_hindstand_lab.terrain_curriculum import RollingCurriculum
 from go2_hindstand_lab.reference_rewards import ReferenceRewards
 from deploy_mujoco.config_loader import load_config
 
 
 class RollingTests(unittest.TestCase):
+    def test_all_l1_has_no_flat_lanes_and_cannot_demote_to_l0(self):
+        settings = TerrainSettings(mode="rolling", min_level=1, initial_level=1, max_level=1, keep_flat=False)
+        levels, columns = initial_terrain_assignment(torch.arange(64)%10, settings)
+        self.assertTrue((levels == 1).all());self.assertTrue((columns >= 5).all())
+        self.assertEqual(len(columns.unique()),5)
+        c = RollingCurriculum(64,"cpu",max_level=1,min_level=1)
+        ids = torch.arange(64)
+        for _ in range(40):
+            c.moving_seconds[:]=2.;c.distance[:]=.4;c.progress[:]=0.
+            up,down=c.finish(ids,levels,columns,torch.ones(64,dtype=torch.bool))
+            self.assertFalse(up.any());self.assertFalse(down.any())
+            c.reset_episode(ids)
+        mixed = TerrainSettings(mode="rolling",initial_level=1)
+        l,k = initial_terrain_assignment(torch.arange(10),mixed)
+        torch.testing.assert_close(l,torch.tensor([0,0,0,0,0,1,1,1,1,1]))
+        with self.assertRaises(ValueError):TerrainSettings(min_level=2,initial_level=1)
+
     def test_profiles_are_continuous_bounded_slopes_with_flat_spawn_and_both_signs(self):
         last = 0.
         for level, angle in enumerate(SLOPE_DEGREES):

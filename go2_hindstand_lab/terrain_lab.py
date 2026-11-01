@@ -6,7 +6,7 @@ from isaaclab.managers import CurriculumTermCfg
 from isaaclab.terrains import TerrainGeneratorCfg, SubTerrainBaseCfg
 from isaaclab.utils import configclass
 from .terrain_profile import (TerrainSettings, GroundProfiles, mesh_arrays, LENGTH, WIDTH,
-                              COLUMNS, SLOPE_DEGREES, geometry_metadata)
+                              COLUMNS, SLOPE_DEGREES, geometry_metadata, initial_terrain_assignment)
 from .terrain_curriculum import RollingCurriculum
 
 
@@ -60,11 +60,13 @@ class GroundRuntime:
         self.env = env
         self.settings = TerrainSettings(**env.cfg.terrain_settings)
         self.profiles = GroundProfiles(self.settings.seed, env.device)
-        self.curriculum = RollingCurriculum(env.num_envs, env.device, self.settings.max_level)
+        self.curriculum = RollingCurriculum(env.num_envs, env.device, self.settings.max_level, min_level=self.settings.min_level)
         self.support_height = torch.zeros(env.num_envs, device=env.device)
-        # Permanent flat half remains at row zero, including fixed-level evaluation.
+        # Choose exact initial levels; optional all-rolling assignment excludes flat columns.
         if self.settings.mode == 'rolling':
-            self.levels[self.columns < COLUMNS//2] = 0
+            levels, columns = initial_terrain_assignment(self.columns, self.settings)
+            self.levels.copy_(levels)
+            self.columns.copy_(columns)
             env.scene.terrain.env_origins[:] = env.scene.terrain.terrain_origins[self.levels, self.columns]
 
     @property

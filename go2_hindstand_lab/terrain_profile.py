@@ -23,15 +23,27 @@ class TerrainSettings:
     seed: int = 1
     max_level: int = 4
     initial_level: int = 0
+    min_level: int = 0
+    keep_flat: bool = True
 
     def __post_init__(self):
         if self.mode not in ("flat", "rolling"):
             raise ValueError("Terrain must be flat or rolling")
-        if not 0 <= self.initial_level <= self.max_level < len(SLOPE_DEGREES):
-            raise ValueError("Terrain levels must satisfy 0 <= initial <= max <= 4")
+        if not 0 <= self.min_level <= self.initial_level <= self.max_level < len(SLOPE_DEGREES):
+            raise ValueError("Terrain levels must satisfy 0 <= min <= initial <= max <= 4")
 
     def to_dict(self):
         return asdict(self)
+
+
+def initial_terrain_assignment(columns, settings):
+    """Start rolling lanes at the requested level; optionally exclude every flat lane."""
+    columns = columns.clone()
+    if not settings.keep_flat:
+        columns[:] = COLUMNS//2 + torch.arange(len(columns), device=columns.device) % (COLUMNS//2)
+    levels = torch.full_like(columns, settings.initial_level)
+    levels[columns < COLUMNS//2] = 0
+    return levels, columns
 
 
 def profile(level, column, seed=1):
