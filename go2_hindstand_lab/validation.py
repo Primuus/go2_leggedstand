@@ -91,5 +91,5 @@ def validate(env):
     assert torch.all(s.gait.air == 0) and torch.all(s.gait.air_score == 0)
     report["air_time_reset"] = "timers and touchdown score cleared; 24 active rewards"
     report["zero_action_10_steps_and_reset"] = "finite; reset restored reference angles (not a balance test)"
-    report["event_observations"] = "59/100; actual contact state, no clock; verified across 10 steps and reset"
+    report["event_observations"] = "67/108; contact and forward-stride state, no clock; verified across 10 steps and reset"
     return report

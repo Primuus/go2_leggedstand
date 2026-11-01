@@ -6,6 +6,7 @@ import torch
 
 from .gait_diagnostics import GaitDiagnostics
 from .gait_events import ACTOR_OBS_SIZE, GaitEvents, gait_enabled
+from .legacy_events import LegacyEventObservation
 from .phase import phase_observation
 from deploy_mujoco.config_loader import load_config
 
@@ -54,32 +55,47 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2., body_weight=None):
     result["valid_air_bouts"] = [{"count": len(b),
         "duration_median_s": float(np.median([v[0] for v in b])) if b else None,
         "peak_median_m": float(np.median([v[1] for v in b])) if b else None} for b in bouts]
-    if body_weight is not None:
+    if body_weight is not None and "foot_forward" in arrays:
         # Replay the same event criteria for both old and new policies, without affecting simulation.
         cfg = load_config().rewards
         events = GaitEvents(num_envs, "cpu", dt, cfg)
         moving = torch.full((num_envs,), speed != 0.)
         weight = torch.as_tensor(body_weight, dtype=torch.float32).reshape(num_envs)
         completed = torch.zeros(2, dtype=torch.long)
+        reliable = torch.zeros(2, dtype=torch.long)
+        alternating = torch.zeros(2, dtype=torch.long)
+        spans, durations, support = [], [], []
         landings = 0
         for i in range(last):
             force = torch.as_tensor(arrays["forces"][i], dtype=torch.float32)
             height = torch.as_tensor(arrays["heights"][i], dtype=torch.float32)
             enabled = gait_enabled(moving, torch.as_tensor(arrays["upright"][i]),
                                    torch.as_tensor(arrays["position"][i, :, 2]), cfg.base_height_target)
-            settled = ((events.air > 0) & ((force > 1.) | events.contact) & enabled[:, None])
-            events.update(force, height, enabled, weight)
+            events.update(force, height, enabled, weight,
+                          torch.as_tensor(arrays["foot_forward"][i], dtype=torch.float32),
+                          torch.full((num_envs,), speed))
             if i >= first:
                 completed += events.completed.sum(0)
-                landings += int(settled.sum())
+                landings += int(events.settled.sum())
+                reliable += events.reliable.sum(0)
+                alternating += events.alternating.sum(0)
+                spans.extend(events.touchdown_span[events.reliable].tolist())
+                durations.extend(events.touchdown_air[events.reliable].tolist())
+                support.extend(events.touchdown_support[events.reliable].tolist())
         result["event_gait"] = {
-            "filtered_landing_count": landings,
+            "confirmed_landing_count": landings,
+            "reliable_steps_left_right": reliable.tolist(),
+            "alternating_reliable_steps_left_right": alternating.tolist(),
+            "reliable_air_median_s": float(np.median(durations)) if durations else None,
+            "landing_forward_span_median_m": float(np.median(spans)) if spans else None,
+            "swing_support_fraction_mean": float(np.mean(support)) if support else None,
+            "target_span_m": min(abs(speed)*cfg.gait_stride_time, cfg.gait_max_stride),
             "valid_alternating_steps_left_right": completed.tolist(),
             "valid_step_fraction_of_landings": float(completed.sum()) / landings if landings else 0.,
             "steps_per_env_second": float(completed.sum()) / max((last-first)*dt*num_envs, dt),
             "minimum_filtered_air_s": cfg.air_time_threshold,
             "minimum_peak_m": cfg.gait_valid_height,
-            "note": "Accepted steps include support, duration, height and alternation constraints; not a raw alternation percentage.",
+            "note": "Reliable events update history independently; qualified steps additionally require duration, height, average support and placement quality >= 0.5.",
         }
     return result
 
@@ -93,25 +109,32 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
     for path in paths:
         policy = torch.jit.load(str(path), map_location=env.device).eval()
         width = dict(policy.named_parameters())["0.weight"].shape[1]
-        assert width in (45, 47, ACTOR_OBS_SIZE)
+        assert width in (45, 47, 59, ACTOR_OBS_SIZE)
         for speed in speeds:
             s.command_override = torch.tensor([speed, 0., 0., 0.], device=env.device)
             obs, _ = env.reset()
+            legacy = LegacyEventObservation(env.num_envs, env.device, env.step_dt, REF.rewards) if width == 59 else None
             start = (s.robot.data.root_pos_w-env.scene.env_origins).cpu().numpy().copy()
-            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright")}
+            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright", "foot_forward")}
             resets = 0
             with torch.inference_mode():
                 for _ in range(round(seconds/env.step_dt)):
                     inputs = obs["policy"][:, :width]
                     if width == 47:
                         inputs = torch.cat((obs["policy"][:, :45], phase_observation(s._get_phase(), s._moving_command())), -1)
+                    elif width == 59:
+                        inputs = torch.cat((obs["policy"][:, :45], legacy.observation(s._moving_command())), -1)
                     action = policy(inputs)
                     obs, _, terminated, truncated, _ = env.step(action)
                     if (terminated | truncated).any():
                         resets += int((terminated | truncated).sum())
                         break  # Do not mix reset poses into a continuous walking trace.
                     s = state(env)
-                    values = {"heights": s.hind_sole_heights,
+                    if legacy is not None:
+                        enabled = gait_enabled(s._moving_command(), -s.projected_gravity[:, 0],
+                            s.root_states[:, 2]-env.scene.env_origins[:, 2], REF.rewards.base_height_target)
+                        legacy.update(s.contact_forces[:, s.contact_foot_indices, 2], s.hind_sole_heights, enabled, s.body_weight)
+                    values = {"foot_forward": s.hind_forward, "heights": s.hind_sole_heights,
                               "forces": s.contact_forces[:, s.contact_foot_indices, 2],
                               "phase": s._get_phase(), "position": s.robot.data.root_pos_w-env.scene.env_origins,
                               "upright": -s.projected_gravity[:, 0]}

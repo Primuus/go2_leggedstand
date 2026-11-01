@@ -56,13 +56,13 @@ class StandWalkRewards(unittest.TestCase):
         s.feet_pos[:, :, 2] += .02
         torch.testing.assert_close(s._reward_handstand_feet_height_exp() * 5., torch.tensor([5., 2.]) * math.exp(-.4))
 
-    def test_linear_tracking_is_tighter_without_changing_angular_tracking(self):
+    def test_linear_and_angular_tracking_denominators(self):
         s = make_state()
         s.commands[1, 0] = .2
         s.base_lin_vel[:, 2] = -.1
         torch.testing.assert_close(s._reward_tracking_lin_vel(), torch.tensor([math.exp(-4), math.exp(-.25)]))
         s.base_ang_vel[:, 0] = .1
-        torch.testing.assert_close(s._reward_tracking_ang_vel(), torch.full((2,), math.exp(-.04)))
+        torch.testing.assert_close(s._reward_tracking_ang_vel(), torch.full((2,), math.exp(-.25)))
         s.base_lin_vel[0, 2] = 0
         s.base_lin_vel[1, 2] = -.2
         torch.testing.assert_close(s._reward_tracking_lin_vel(), torch.ones(2))
@@ -71,8 +71,8 @@ class StandWalkRewards(unittest.TestCase):
         s = make_state()
         s.commands[1, 0] = .2
         s.dof_pos[:, 7] = 1
-        for reward in (s._reward_default_pos, s._reward_symmetric_joints):
-            torch.testing.assert_close(reward(), torch.tensor([1., .2]))
+        torch.testing.assert_close(s._reward_default_pos(), torch.tensor([1., .2]))
+        torch.testing.assert_close(s._reward_symmetric_joints(), torch.tensor([1., 0.]))
         s.dof_pos.zero_()
         s.dof_pos[:, 1] = 1
         for reward in (s._reward_default_pos, s._reward_symmetric_joints):
@@ -83,8 +83,8 @@ class StandWalkRewards(unittest.TestCase):
         active = [n for n in dir(s.cfg.rewards.scales) if not n.startswith('_') and getattr(s.cfg.rewards.scales, n) != 0]
         self.assertEqual(len(active), 24)
         self.assertEqual(s.cfg.rewards.scales.feet_air_time, 1.)
-        self.assertEqual(s.cfg.env.num_observations, 59)
-        self.assertEqual(s.cfg.env.num_privileged_obs, 100)
+        self.assertEqual(s.cfg.env.num_observations, 67)
+        self.assertEqual(s.cfg.env.num_privileged_obs, 108)
         self.assertEqual(s.cfg.rewards.target_foot_height, .06)
         self.assertEqual(s.cfg.rewards.scales.feet_clearance, 2.)
         self.assertFalse(s.cfg.commands.heading_command)

@@ -153,7 +153,7 @@ class ReferenceRewards:
         # Multiply the right side hips by -1 to match the sign of the left side:
         dof[:,1,0] *= -1   # FR hip
         dof[:,3,0] *= -1   # RR hip
-        rear_factor = torch.where(self._moving_command(), self.cfg.rewards.moving_rear_posture_factor, 1.)
+        rear_factor = torch.where(self._moving_command(), 0., 1.)
         err = torch.sum(torch.abs(dof[:,0,:] - dof[:,1,:]),axis=1) + rear_factor * torch.sum(torch.abs(dof[:,2,:] - dof[:,3,:]),axis=1)
         return err*(self.rew_hanstand>0.70)
 

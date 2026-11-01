@@ -17,7 +17,8 @@ parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
 parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
 parser.add_argument("--resume_iteration", type=int, help="Explicit completed-update count for a legacy checkpoint with stale iter metadata")
-parser.add_argument("--migrate_events", action="store_true", help="Replace 47/88 clock inputs with 59/100 contact-state inputs and migrate Adam")
+parser.add_argument("--migrate_events", action="store_true", help="Replace 47/88 clock inputs with 67/108 contact/stride inputs and migrate Adam")
+parser.add_argument("--migrate_stride", action="store_true", help="Migrate 59/100 event checkpoint to 67/108 stride state; retain 12 compatible state columns; reinitialize changed leg history and new stride state")
 parser.add_argument("--prepare_only", action="store_true", help="Validate, restore/migrate and export a checkpoint without PPO updates")
 parser.add_argument("--eval_policies", type=Path, nargs="+", help="Evaluate exported policies deterministically; no training")
 parser.add_argument("--evaluation_seconds", type=float, default=20.)
@@ -30,8 +31,10 @@ AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 if args.resume is not None and not args.resume.is_file():
     parser.error(f"Checkpoint does not exist: {args.resume}")
-if args.migrate_events and args.resume is None:
-    parser.error("--migrate_events requires --resume")
+if (args.migrate_events or args.migrate_stride) and args.resume is None:
+    parser.error("Migration requires --resume")
+if args.migrate_events and args.migrate_stride:
+    parser.error("Choose only one migration source")
 if args.prepare_only and (args.resume is None or args.eval_policies or args.validate_only):
     parser.error("--prepare_only requires --resume and cannot combine with evaluation/validate_only")
 if args.resume_iteration is not None and (args.resume is None or args.resume_iteration < 0):
@@ -98,9 +101,9 @@ def main():
     if not args.validate_only and not args.eval_policies:
         runner = OnPolicyRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
         if args.resume is not None:
-            if args.migrate_events:
+            if args.migrate_events or args.migrate_stride:
                 from go2_hindstand_lab.checkpoint import migrate_event_checkpoint
-                migrated = migrate_event_checkpoint(torch.load(args.resume, map_location="cpu"), runner.alg.actor_critic)
+                migrated = migrate_event_checkpoint(torch.load(args.resume, map_location="cpu"), runner.alg.actor_critic, old_count=14 if args.migrate_stride else 2)
                 runner.alg.optimizer.load_state_dict(migrated["optimizer_state_dict"])
                 runner.current_learning_iteration = migrated["iter"]
                 provenance["event_migration"] = migrated["event_migration"]

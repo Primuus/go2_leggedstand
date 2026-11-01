@@ -5,9 +5,9 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
     class env:
         frame_stack = 1 #action stack
         c_frame_stack = 1 #critic 网络的堆叠帧数
-        num_single_obs = 59 # Original 45 plus 14 actual-contact gait state values.
+        num_single_obs = 67 # Original 45 plus 22 contact/stride state values.
         num_observations = int(frame_stack * num_single_obs) # 10帧正常的观测
-        single_num_privileged_obs = 100  # 3 linear velocity + 59 actor + 34 fixed physics + 4 contacts.
+        single_num_privileged_obs = 108  # 3 linear velocity + 67 actor + 34 fixed physics + 4 contacts.
         num_privileged_obs = int(c_frame_stack * single_num_privileged_obs) # 3帧特权观测
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
@@ -196,7 +196,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
             dof_pos_limits=-2.0
             alive=1.0
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
-        tracking_sigma = 0.25 # Angular tracking denominator, unchanged.
+        tracking_sigma = 0.04 # Tighten zero-yaw tracking after measured heading drift.
         tracking_lin_sigma = 0.04 # Squared velocity error denominator while moving.
         tracking_stand_sigma = 0.0025 # Squared velocity error denominator at standstill.
         moving_rear_posture_factor = 0.2 # Effective rear penalty: -0.1 * 0.2 = -0.02.
@@ -206,6 +206,13 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
         air_time_threshold = 0.12 # Filtered airborne seconds; score only on landing.
         gait_valid_height = 0.04 # Minimum swing peak for a completed alternating step.
+        gait_reliable_air_s = 0.04 # Reliable event, independent of reward quality.
+        gait_reliable_height = 0.01
+        gait_landing_confirm_s = 0.04 # Two raw contact frames at 50 Hz.
+        gait_valid_support_fraction = 0.8 # Diagnostics only, never a reward switch.
+        gait_stride_time = 0.3 # Target fore-aft placement = |vx| * this interval.
+        gait_max_stride = 0.15 # Verified with current 0.52 m reference posture.
+        gait_linear_threshold = 0.05
         gait_decay_start = 0.24 # Single-support reward starts decaying.
         gait_max_air_time = 0.36 # No positive reward for indefinite one-leg hovering.
         base_height_target = 0.52#0.25
@@ -287,7 +294,7 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
         sym_loss = True
-        # 59D mirror: swap left/right gait-state pairs, no external clock.
+        # 67D mirror: swap left/right gait-state pairs, no external clock.
         # [0:3]角速度: 轴向量 (-wx, wy, -wz) | [3:6]重力投影: 极向量 (gx, -gy, gz)
         # [6:9]命令: (vx, -vy, -wyaw) | [9:21/21:33/33:45] dof_pos/vel/action: FL<->FR, RL<->RR, hip 取反
         obs_permutation = [-0.0001, 1, -2,            # ang_vel
@@ -305,7 +312,7 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
                            -33, 34, 35,                # actions FR <- FL
                            -42, 43, 44,                # actions RL <- RR
                            -39, 40, 41,                # actions RR <- RL
-                           46, 45, 48, 47, 50, 49, 52, 51, 54, 53, 56, 55, 58, 57]
+                           46, 45, 48, 47, 50, 49, 52, 51, 54, 53, 56, 55, 58, 57, 60, 59, 62, 61, 64, 63, 66, 65]
         act_permutation = [-3, 4, 5,-0.0001, 1, 2 , -9, 10, 11,-6, 7, 8,]#关节电机的对陈关系
         frame_stack = 1
         sym_coef = 1.0

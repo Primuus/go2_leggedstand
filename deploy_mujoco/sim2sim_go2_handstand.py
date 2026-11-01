@@ -1,4 +1,4 @@
-"""Contact-driven handstand policy on MuJoCo; original 45/47 policies remain evaluable."""
+"""Contact-driven handstand policy on MuJoCo; original 45/47/59 policies remain evaluable."""
 import argparse
 from contextlib import nullcontext
 import json
@@ -14,7 +14,8 @@ import torch
 from config_loader import ROOT, load_config
 sys.path.insert(0, str(ROOT))
 from go2_hindstand_lab.phase import phase_observation
-from go2_hindstand_lab.gait_events import GaitEvents, ACTOR_OBS_SIZE, gait_enabled
+from go2_hindstand_lab.gait_events import GaitEvents, ACTOR_OBS_SIZE, gait_enabled, forward_foot_positions
+from go2_hindstand_lab.legacy_events import LegacyEventObservation
 
 
 class Runner:
@@ -45,13 +46,14 @@ class Runner:
         if policy_path is not None:
             self.policy = torch.jit.load(str(policy_path), map_location="cpu").eval()
             self.num_obs = dict(self.policy.named_parameters())["0.weight"].shape[1]
-            if self.num_obs not in (45, 47, ACTOR_OBS_SIZE):
+            if self.num_obs not in (45, 47, 59, ACTOR_OBS_SIZE):
                 raise ValueError(f"Unsupported policy input width: {self.num_obs}")
             with torch.inference_mode():
                 self.validate_action(self.policy(torch.zeros(1, self.num_obs)))
         self.foot_geoms = [self.model.geom(n + "_foot_collision_0").id for n in ("RL", "RR")]
         self.body_weight = torch.tensor([self.model.body_mass.sum() * abs(self.cfg.sim.gravity[2])], dtype=torch.float32)
-        self.gait = GaitEvents(1, "cpu", self.cfg.sim.dt * self.cfg.control.decimation, self.cfg.rewards)
+        tracker = LegacyEventObservation if self.num_obs == 59 else GaitEvents
+        self.gait = tracker(1, "cpu", self.cfg.sim.dt * self.cfg.control.decimation, self.cfg.rewards)
         self.reset()
 
     @staticmethod
@@ -88,7 +90,7 @@ class Runner:
                       or abs(self.command[2]) > self.cfg.commands.standing_ang_threshold)
             clock = phase_observation(torch.tensor(self.phase(), dtype=torch.float32), torch.tensor(moving))
             obs = np.concatenate((obs, clock.numpy()))
-        elif self.num_obs == ACTOR_OBS_SIZE:
+        elif self.num_obs in (59, ACTOR_OBS_SIZE):
             obs = np.concatenate((obs, self.gait.observation(torch.tensor([self.moving_command()]))[0].numpy()))
         return np.clip(obs, -self.cfg.normalization.clip_observations,
                        self.cfg.normalization.clip_observations)
@@ -111,6 +113,13 @@ class Runner:
                         forces[leg] += force[0] * abs(contact.frame[2])
         return heights.astype(np.float32), forces
 
+    def feet_forward(self):
+        rotation = np.empty(9)
+        mujoco.mju_quat2Mat(rotation, self.data.qpos[3:7])
+        return forward_foot_positions(torch.tensor(self.data.geom_xpos[self.foot_geoms][None], dtype=torch.float32),
+            torch.tensor(self.data.qpos[None, :3], dtype=torch.float32),
+            torch.tensor(-rotation.reshape(3, 3)[None, :, 2], dtype=torch.float32))
+
     def phase(self):
         return (self.control_steps * self.cfg.sim.dt * self.cfg.control.decimation) % self.cfg.rewards.cycle_time / self.cfg.rewards.cycle_time
 
@@ -129,13 +138,17 @@ class Runner:
             self.data.ctrl[self.aids] = np.clip(torque, limits[:, 0], limits[:, 1])
             mujoco.mj_step(self.model, self.data)
         self.control_steps += 1
-        if self.num_obs == ACTOR_OBS_SIZE:
+        if self.num_obs in (59, ACTOR_OBS_SIZE):
             mujoco.mj_forward(self.model, self.data)
             heights, forces = self.feet_state()
             enabled = gait_enabled(torch.tensor([self.moving_command()]),
                 torch.tensor([-self.observation()[3]]), torch.tensor([self.data.qpos[2]]),
                 self.cfg.rewards.base_height_target)
-            self.gait.update(torch.from_numpy(forces[None]), torch.from_numpy(heights[None]), enabled, self.body_weight)
+            args = (torch.from_numpy(forces[None]), torch.from_numpy(heights[None]), enabled, self.body_weight)
+            if self.num_obs == 59:
+                self.gait.update(*args)
+            else:
+                self.gait.update(*args, self.feet_forward(), torch.tensor(self.command[:1]))
         if not np.isfinite(self.data.qpos).all() or not np.isfinite(self.data.qvel).all():
             raise RuntimeError("Non-finite simulation state")
 
@@ -160,7 +173,7 @@ class Runner:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--policy", type=Path, help="Exported 59-input event policy (legacy 45/47-input accepted for comparison)")
+    mode.add_argument("--policy", type=Path, help="Exported 67-input stride policy (legacy 45/47/59-input accepted for comparison)")
     mode.add_argument("--check", action="store_true", help="Check model/PD only; does not test a learned policy")
     mode.add_argument("--pose", action="store_true", help="View the initial reference pose without advancing physics")
     parser.add_argument("--headless", action="store_true")

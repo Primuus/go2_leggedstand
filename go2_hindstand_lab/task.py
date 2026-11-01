@@ -15,7 +15,7 @@ from isaaclab.utils.math import euler_xyz_from_quat, quat_apply
 from deploy_mujoco.config_loader import load_config
 from .asset import JOINT_NAMES, FOOT_NAMES, ROOT, prepare_urdf, asset_metadata
 from .reference_rewards import ReferenceRewards
-from .gait_events import GaitEvents, EVENT_OBS_SIZE, gait_enabled
+from .gait_events import GaitEvents, EVENT_OBS_SIZE, gait_enabled, forward_foot_positions
 from .gait_diagnostics import GaitDiagnostics
 
 REF = load_config()
@@ -83,6 +83,8 @@ class State(ReferenceRewards):
         offset = self.rigid_state.new_tensor([-.002, 0., 0.]).expand(env.num_envs, 2, 3)
         centers = self.rigid_state[:, self.contact_foot_indices, :3] + quat_apply(
             rear_quat.reshape(-1, 4), offset.reshape(-1, 3)).reshape(env.num_envs, 2, 3)
+        forward = centers.new_tensor([0., 0., -1.]).expand(env.num_envs, 3)
+        self.hind_forward = forward_foot_positions(centers, data.root_pos_w, quat_apply(data.root_quat_w, forward))
         self.hind_sole_heights = centers[..., 2] - .022 - env.scene.env_origins[:, 2:3]
         self.feet_pos = self.rigid_state[:, self.feet_name_reward_indices, :3]
         self.contact_forces = self.sensor.data.net_forces_w[:, self.sensor_ids]
@@ -105,7 +107,7 @@ class State(ReferenceRewards):
             enabled = gait_enabled(self._moving_command(), -self.projected_gravity[:, 0],
                                    self.root_states[:, 2] - env.scene.env_origins[:, 2],
                                    REF.rewards.base_height_target) & (env.episode_length_buf > 0)
-            self.gait.update(self.contact_forces[:, self.contact_foot_indices, 2], self.hind_sole_heights, enabled, self.body_weight)
+            self.gait.update(self.contact_forces[:, self.contact_foot_indices, 2], self.hind_sole_heights, enabled, self.body_weight, self.hind_forward, self.commands[:, 0])
             self.gait_tick = env.common_step_counter
         if self.diagnostic_tick != env.common_step_counter and torch.any(env.episode_length_buf > 0):
             self.diagnostics.update(self.hind_sole_heights, self.contact_forces[:, self.contact_foot_indices, 2],

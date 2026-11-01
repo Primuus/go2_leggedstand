@@ -27,12 +27,16 @@ class PhaseTests(unittest.TestCase):
                 f,h = [150.,150.],[0.,0.]
                 f[leg],h[leg] = 0.,.06
                 forces.append(f); heights.append(h)
-            forces.append([75.,75.]); heights.append([0.,0.])
+            forces.extend([[75.,75.]]*2); heights.extend([[0.,0.]]*2)
         n = len(forces)
         trace = {"forces":np.array(forces)[:,None], "heights":np.array(heights)[:,None],
-                 "phase":np.zeros((n,1)), "position":np.tile([0.,0.,.52],(n,1,1)), "upright":np.ones((n,1))}
+                 "foot_forward":np.zeros((n,1,2)), "phase":np.zeros((n,1)), "position":np.tile([0.,0.,.52],(n,1,1)), "upright":np.ones((n,1))}
+        cursor=0
+        for leg in (1,1,0):
+            trace['foot_forward'][cursor:cursor+13,0,leg]=.06
+            cursor+=13
         report = summarize_trace(trace,.02,.2,trace['position'][0],burn_in_s=0.,body_weight=[150.])
-        self.assertEqual(report['event_gait']['filtered_landing_count'],3)
+        self.assertEqual(report['event_gait']['confirmed_landing_count'],3)
         self.assertEqual(report['event_gait']['valid_alternating_steps_left_right'],[1,1])
 
     def test_evaluation_excludes_clearance_after_loss_of_upright(self):
@@ -57,11 +61,11 @@ class PhaseTests(unittest.TestCase):
         torch.testing.assert_close(phase_observation((phase+.5)%1, torch.ones(4, dtype=torch.bool)), -clock, atol=1e-6, rtol=0)
         torch.testing.assert_close(phase_observation(phase, torch.zeros(4, dtype=torch.bool)), torch.zeros(4, 2))
         cfg = load_config("Go2_Handstand_PPO_Yu")
-        matrix = torch.zeros(59, 59)
+        matrix = torch.zeros(67, 67)
         for i, p in enumerate(cfg.algorithm.obs_permutation):
             matrix[int(abs(p)), i] = -1 if p < 0 else 1
-        torch.testing.assert_close(matrix @ matrix, torch.eye(59))
-        torch.testing.assert_close(matrix[45:, 45:], torch.kron(torch.eye(7), torch.tensor([[0.,1.],[1.,0.]])))
+        torch.testing.assert_close(matrix @ matrix, torch.eye(67))
+        torch.testing.assert_close(matrix[45:, 45:], torch.kron(torch.eye(11), torch.tensor([[0.,1.],[1.,0.]])))
 
     def test_migration_preserves_output_adam_and_next_update(self):
         old = ActorCritic(45, 86, 12, actor_hidden_dims=[16, 8], critic_hidden_dims=[16, 8])

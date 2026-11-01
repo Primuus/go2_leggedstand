@@ -33,7 +33,7 @@ def main():
             runner.reset()
             runner.command[:] = [speed, 0., 0.]
             start = runner.data.qpos[None, :3].copy()
-            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright")}
+            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright", "foot_forward")}
             for _ in range(round(args.duration / dt)):
                 runner.step()
                 mujoco.mj_forward(runner.model, runner.data)
@@ -48,7 +48,7 @@ def main():
                                 force = np.zeros(6)
                                 mujoco.mj_contactForce(runner.model, runner.data, i, force)
                                 forces[leg] += force[0] * abs(contact.frame[2])
-                values = {"heights": heights[None], "forces": forces[None],
+                values = {"foot_forward": runner.feet_forward().numpy(), "heights": heights[None], "forces": forces[None],
                           "phase": np.array([runner.phase()]), "position": runner.data.qpos[None, :3].copy(),
                           "upright": np.array([-runner.observation()[3]])}
                 for key, value in values.items():
