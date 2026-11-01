@@ -478,7 +478,7 @@
         "go2_hindstand_lab/adapter.py": "a5332b8a662331d340ab87232d3886724f4c45a9ba8cb6f4becf6df07119637a",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
         "go2_hindstand_lab/checkpoint.py": "c93303c93e00595acf0257753c9137124b0fe11e660064b3fae035c73ae0d539",
-        "go2_hindstand_lab/evaluation.py": "ed76530e32bb6c3323ac3ba20ea092298023ffaf1ba1881096c98e11b6c87906",
+        "go2_hindstand_lab/evaluation.py": "7476fb2c706c0bf3f84fe542a7f11095b250dac4aa471ad6b9b506d74f3aa776",
         "go2_hindstand_lab/gait_diagnostics.py": "76a9c2ed9576078a9542f63a0a58c8ff850a2d19d4773c57437b5fa034e8c75b",
         "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
         "go2_hindstand_lab/reference_rewards.py": "ae841cc294910797c092731b6044423cae5c2cad870ed44f4fd793cc9839b7b1",
@@ -486,7 +486,7 @@
         "go2_hindstand_lab/validation.py": "13aeb34c0e4e2ecc63fcc3dbd8143785728e0467274a0aa8844c26de561335f0",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
         "scripts/train_lab.py": "4ba95ec00bb9b1a589c8e101e81dc8d027e36cb5b367a861e81a715d409bac2e",
-        "scripts/eval_mujoco.py": "5d25eaacb0d31454f21ee2bc51eab7b5d49be2aaa7ce935a88856711044e512d",
+        "scripts/eval_mujoco.py": "06b5cb707543a7809ba3ae5595ab906dae9d05c81af06232e491e1403e4c0a2c",
         "deploy_mujoco/sim2sim_go2_handstand.py": "ba90048713740d332b827a9ab4440017a34915c9e955626b1d186691522b36a2",
         "go2_hindstand_lab/gait_events.py": "00fae6076d7818aa6dad940849ce722c3e44c5de900eb9dbe8b0fb3522e7a6e5"
       },
@@ -510,7 +510,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/速度上限05与中止训练记录.md",
+      "latest_training_report": "doc/接触事件步态500轮续训.md",
       "latest_implementation_report": "doc/接触事件步态修改.md"
     },
     "stand_walk_refinement": {
@@ -683,7 +683,7 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "No training for event gait change; zero-update migration and short interface evaluations complete."
+    "training_started": "Event gait continuation completed500 updates to4901; exported/evaluated; no additional training."
   },
   "feet_air_time_experiment": {
     "authorization": "Enable feet_air_time and train 300 additional updates",
@@ -774,5 +774,40 @@
     "isaac_interface_report": "logs/go2_handstand/2026-11-01_07-29-07_events_interface_check/evaluation.json",
     "mujoco_interface_report": "logs/go2_handstand/2026-11-01_07-28-03_events_prepare/exported/mujoco_interface_check.json",
     "report": "doc/接触事件步态修改.md"
+  },
+  "event_gait_training_500": {
+    "authorization": "User explicitly selected500 additional updates",
+    "run": "logs/go2_handstand/2026-11-01_07-37-12_events_to4901",
+    "start": 4401,
+    "end": 4901,
+    "additional_updates": 500,
+    "num_envs": 4096,
+    "training_seconds": 591.05,
+    "resume_checkpoint": "logs/go2_handstand/2026-11-01_07-28-03_events_prepare/prepared_model_4401.pt",
+    "no_remigration": true,
+    "training_parameters_unchanged": true,
+    "evaluation_only_change": "Replay GaitEvents from recorded force/height trace to count complete qualified alternating steps for all policies",
+    "export_validation": {
+      "checkpoint": "logs/go2_handstand/2026-11-01_07-37-12_events_to4901/model_4901.pt",
+      "checkpoint_sha256": "87c3e2a115bb971c6f9d334722fbaac16e76411be24701f3f31abce834e34627",
+      "iter": 4901,
+      "additional_updates": 500,
+      "optimizer_state_entries": 17,
+      "actor_width": 59,
+      "critic_width": 100,
+      "actions": 12,
+      "policy_sha256": "d6e554d2e989e2238a7a0909ede3ffbea7d2eeed1c6f4573865a8588d6642f8c",
+      "policy_bytes": 796626,
+      "export_max_error": 0.0,
+      "test_inputs": 256,
+      "parameters_finite": true,
+      "source_checkpoint_unchanged": true,
+      "event_actor_columns_l2": 1.3132652044296265,
+      "training_seconds": 591.05
+    },
+    "compressed_download_bytes": 742036,
+    "result": "Low-speed small steps persist; high-speed lift peaks improve but lateral drift worsens. Qualified alternating steps zero in both simulators.",
+    "report": "doc/接触事件步态500轮续训.md",
+    "training_stopped": true
   }
 }

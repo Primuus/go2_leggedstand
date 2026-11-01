@@ -17,6 +17,24 @@ from rsl_rl.modules import ActorCritic
 
 
 class PhaseTests(unittest.TestCase):
+    def test_event_summary_counts_qualified_alternating_steps(self):
+        import numpy as np
+        from go2_hindstand_lab.evaluation import summarize_trace
+        forces, heights = [], []
+        for leg in (1, 1, 0):  # Repeating the same leg must not count twice.
+            forces.append([75.,75.]); heights.append([0.,0.])
+            for _ in range(10):
+                f,h = [150.,150.],[0.,0.]
+                f[leg],h[leg] = 0.,.06
+                forces.append(f); heights.append(h)
+            forces.append([75.,75.]); heights.append([0.,0.])
+        n = len(forces)
+        trace = {"forces":np.array(forces)[:,None], "heights":np.array(heights)[:,None],
+                 "phase":np.zeros((n,1)), "position":np.tile([0.,0.,.52],(n,1,1)), "upright":np.ones((n,1))}
+        report = summarize_trace(trace,.02,.2,trace['position'][0],burn_in_s=0.,body_weight=[150.])
+        self.assertEqual(report['event_gait']['filtered_landing_count'],3)
+        self.assertEqual(report['event_gait']['valid_alternating_steps_left_right'],[1,1])
+
     def test_evaluation_excludes_clearance_after_loss_of_upright(self):
         import numpy as np
         from go2_hindstand_lab.evaluation import summarize_trace

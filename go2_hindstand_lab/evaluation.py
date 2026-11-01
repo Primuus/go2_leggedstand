@@ -5,11 +5,12 @@ import numpy as np
 import torch
 
 from .gait_diagnostics import GaitDiagnostics
-from .gait_events import ACTOR_OBS_SIZE
+from .gait_events import ACTOR_OBS_SIZE, GaitEvents, gait_enabled
 from .phase import phase_observation
+from deploy_mujoco.config_loader import load_config
 
 
-def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
+def summarize_trace(trace, dt, speed, start, burn_in_s=2., body_weight=None):
     arrays = {k: np.asarray(v) for k, v in trace.items()}
     count, num_envs = arrays["heights"].shape[:2]
     first = min(round(burn_in_s / dt), count)
@@ -53,6 +54,33 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
     result["valid_air_bouts"] = [{"count": len(b),
         "duration_median_s": float(np.median([v[0] for v in b])) if b else None,
         "peak_median_m": float(np.median([v[1] for v in b])) if b else None} for b in bouts]
+    if body_weight is not None:
+        # Replay the same event criteria for both old and new policies, without affecting simulation.
+        cfg = load_config().rewards
+        events = GaitEvents(num_envs, "cpu", dt, cfg)
+        moving = torch.full((num_envs,), speed != 0.)
+        weight = torch.as_tensor(body_weight, dtype=torch.float32).reshape(num_envs)
+        completed = torch.zeros(2, dtype=torch.long)
+        landings = 0
+        for i in range(last):
+            force = torch.as_tensor(arrays["forces"][i], dtype=torch.float32)
+            height = torch.as_tensor(arrays["heights"][i], dtype=torch.float32)
+            enabled = gait_enabled(moving, torch.as_tensor(arrays["upright"][i]),
+                                   torch.as_tensor(arrays["position"][i, :, 2]), cfg.base_height_target)
+            settled = ((events.air > 0) & ((force > 1.) | events.contact) & enabled[:, None])
+            events.update(force, height, enabled, weight)
+            if i >= first:
+                completed += events.completed.sum(0)
+                landings += int(settled.sum())
+        result["event_gait"] = {
+            "filtered_landing_count": landings,
+            "valid_alternating_steps_left_right": completed.tolist(),
+            "valid_step_fraction_of_landings": float(completed.sum()) / landings if landings else 0.,
+            "steps_per_env_second": float(completed.sum()) / max((last-first)*dt*num_envs, dt),
+            "minimum_filtered_air_s": cfg.air_time_threshold,
+            "minimum_peak_m": cfg.gait_valid_height,
+            "note": "Accepted steps include support, duration, height and alternation constraints; not a raw alternation percentage.",
+        }
     return result
 
 
@@ -89,7 +117,8 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
                               "upright": -s.projected_gravity[:, 0]}
                     for key, value in values.items():
                         trace[key].append(value.cpu().numpy().copy())
-            result = summarize_trace(trace, env.step_dt, speed, start) if trace["heights"] else {"duration_s": 0.}
+            result = summarize_trace(trace, env.step_dt, speed, start,
+                                     body_weight=s.body_weight.cpu().numpy()) if trace["heights"] else {"duration_s": 0.}
             result.update(policy=str(path), policy_sha256=hashlib.sha256(Path(path).read_bytes()).hexdigest(),
                           input_width=width, early_resets=resets)
             report["cases"].append(result)

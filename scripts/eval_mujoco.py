@@ -53,7 +53,7 @@ def main():
                           "upright": np.array([-runner.observation()[3]])}
                 for key, value in values.items():
                     trace[key].append(value.copy())
-            result = summarize_trace(trace, dt, speed, start)
+            result = summarize_trace(trace, dt, speed, start, body_weight=runner.body_weight.numpy())
             result.update(policy=str(path), policy_sha256=hashlib.sha256(path.read_bytes()).hexdigest(), input_width=runner.num_obs)
             report["cases"].append(result)
             print(json.dumps(result), flush=True)
