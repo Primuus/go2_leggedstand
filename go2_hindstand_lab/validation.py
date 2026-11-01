@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from isaaclab.utils.math import quat_apply
 from .asset import asset_metadata, JOINT_NAMES, FOOT_NAMES, SOURCE
 from .task import REF, SCALES, state, actor_observation
-from .phase import phase_observation
+from .gait_events import ACTOR_OBS_SIZE, CRITIC_OBS_SIZE
 
 
 def validate(env):
@@ -46,12 +46,12 @@ def validate(env):
     torch.testing.assert_close(joint_limits, expected, rtol=0, atol=1e-5)
     assert env.action_manager.get_term("joints")._joint_names == JOINT_NAMES
     assert len(SCALES) == 24 and SCALES["feet_air_time"] == 1.
-    assert env.observation_manager.group_obs_dim == {"policy": (47,), "critic": (88,)}
+    assert env.observation_manager.group_obs_dim == {"policy": (ACTOR_OBS_SIZE,), "critic": (CRITIC_OBS_SIZE,)}
     # This experiment samples true standstill or straight forward commands.
     assert not REF.commands.heading_command
     assert torch.all(s.commands[:, 1:] == 0)
     moving = s._moving_command()
-    torch.testing.assert_close(actor_observation(env)[:, -2:], phase_observation(s._get_phase(), moving))
+    torch.testing.assert_close(actor_observation(env)[:, 45:], s.gait.observation(moving))
     assert torch.all(s.commands[~moving, 0] == 0)
     lo, hi = REF.commands.ranges.lin_vel_x
     assert torch.all((s.commands[moving, 0] >= lo) & (s.commands[moving, 0] <= hi))
@@ -73,7 +73,7 @@ def validate(env):
               "native_joint_names": robot.joint_names, "native_body_names": robot.body_names,
               "initial_base_height_m": float(root_height[0]), "initial_front_foot_height_m": front[0].tolist(),
               "initial_hind_sole_height_m": rear_soles[0].tolist(),
-              "observation_dims": [47, 88], "reward_count": len(SCALES), "initial_reward_scores": scores,
+              "observation_dims": [ACTOR_OBS_SIZE, CRITIC_OBS_SIZE], "reward_count": len(SCALES), "initial_reward_scores": scores,
               "zero_action_initial_pd": "passed", "urdf_sha256": metadata["urdf_sha256"],
               "inertia_eigenvalue_max_error": float((actual_eigenvalues-expected_eigenvalues).abs().max()),
               "fixed_joint_parameters": "damping=.1, armature=.01, friction=.2 verified",
@@ -84,12 +84,12 @@ def validate(env):
         obs, rewards, _, _, _ = env.step(torch.zeros(env.num_envs, 12, device=env.device))
         assert torch.isfinite(obs["critic"]).all() and torch.isfinite(rewards).all()
         s = state(env)
-        torch.testing.assert_close(obs["policy"][:, -2:], phase_observation(s._get_phase(), s._moving_command()))
+        torch.testing.assert_close(obs["policy"][:, 45:], s.gait.observation(s._moving_command()))
     env.reset()
     s = state(env)
     torch.testing.assert_close(s.dof_pos, s.default.expand_as(s.dof_pos), rtol=0, atol=1e-5)
-    assert torch.all(s.air_time.time == 0) and torch.all(s.air_time.score == 0)
+    assert torch.all(s.gait.air == 0) and torch.all(s.gait.air_score == 0)
     report["air_time_reset"] = "timers and touchdown score cleared; 24 active rewards"
     report["zero_action_10_steps_and_reset"] = "finite; reset restored reference angles (not a balance test)"
-    report["phase_observations"] = "47/88; noiseless sin/cos; zero at standstill; verified across 10 steps and reset"
+    report["event_observations"] = "59/100; actual contact state, no clock; verified across 10 steps and reset"
     return report

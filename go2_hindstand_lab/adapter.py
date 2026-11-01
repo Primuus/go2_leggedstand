@@ -1,13 +1,14 @@
 """Isaac Lab five-result API to the bundled reference PPO VecEnv API."""
 import torch
 from .task import state
+from .gait_events import ACTOR_OBS_SIZE, CRITIC_OBS_SIZE
 
 
 class ReferenceVecEnv:
     def __init__(self, env):
         self.env = env
         self.num_envs, self.device = env.num_envs, env.device
-        self.num_obs, self.num_privileged_obs, self.num_actions = 47, 88, 12
+        self.num_obs, self.num_privileged_obs, self.num_actions = ACTOR_OBS_SIZE, CRITIC_OBS_SIZE, 12
         self.max_episode_length = env.max_episode_length
         self.diagnostic_log = state(env).diagnostics.summary()
 
@@ -24,7 +25,7 @@ class ReferenceVecEnv:
 
     def _observations(self, obs):
         self.obs_buf, self.privileged_obs_buf = obs["policy"], obs["critic"]
-        if self.obs_buf.shape != (self.num_envs, 47) or self.privileged_obs_buf.shape != (self.num_envs, 88):
+        if self.obs_buf.shape != (self.num_envs, self.num_obs) or self.privileged_obs_buf.shape != (self.num_envs, self.num_privileged_obs):
             raise RuntimeError("Reference policy/critic observation layout changed")
         if not torch.isfinite(self.privileged_obs_buf).all():
             raise RuntimeError("Non-finite observations")

@@ -5,6 +5,8 @@ import numpy as np
 import torch
 
 from .gait_diagnostics import GaitDiagnostics
+from .gait_events import ACTOR_OBS_SIZE
+from .phase import phase_observation
 
 
 def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
@@ -63,7 +65,7 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
     for path in paths:
         policy = torch.jit.load(str(path), map_location=env.device).eval()
         width = dict(policy.named_parameters())["0.weight"].shape[1]
-        assert width in (45, 47)
+        assert width in (45, 47, ACTOR_OBS_SIZE)
         for speed in speeds:
             s.command_override = torch.tensor([speed, 0., 0., 0.], device=env.device)
             obs, _ = env.reset()
@@ -72,7 +74,10 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
             resets = 0
             with torch.inference_mode():
                 for _ in range(round(seconds/env.step_dt)):
-                    action = policy(obs["policy"][:, :width])
+                    inputs = obs["policy"][:, :width]
+                    if width == 47:
+                        inputs = torch.cat((obs["policy"][:, :45], phase_observation(s._get_phase(), s._moving_command())), -1)
+                    action = policy(inputs)
                     obs, _, terminated, truncated, _ = env.step(action)
                     if (terminated | truncated).any():
                         resets += int((terminated | truncated).sum())

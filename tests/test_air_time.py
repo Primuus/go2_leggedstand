@@ -1,4 +1,4 @@
-"""Touchdown credit, censoring and completed-update checkpoint regressions."""
+"""Contact-driven gait state and completed-update checkpoint regressions."""
 from pathlib import Path
 import importlib.util
 import sys
@@ -8,60 +8,105 @@ import unittest
 from unittest.mock import Mock
 import torch
 
-from go2_hindstand_lab.air_time import FeetAirTime
+from deploy_mujoco.config_loader import load_config
+from go2_hindstand_lab.gait_events import GaitEvents, gait_enabled
 
 
 class AirTimeTests(unittest.TestCase):
     def make(self, count=1):
-        return FeetAirTime(count, "cpu", .02, .12, .12, .5)
+        return GaitEvents(count, "cpu", .02, load_config().rewards)
 
-    def step(self, timer, forces, enabled=True):
-        timer.update(torch.tensor([forces], dtype=torch.float).expand_as(timer.time),
-                     torch.full((len(timer.time),), enabled), torch.full((len(timer.time),), 150.))
-        return timer.score.clone()
+    def step(self, state, forces=(75.,75.), heights=(0.,0.), enabled=True):
+        state.update(torch.tensor([forces]).float().expand_as(state.air),
+                     torch.tensor([heights]).float().expand_as(state.air),
+                     torch.full((len(state.air),), enabled), torch.full((len(state.air),), 150.))
+        return state.air_score.clone()
 
-    def swing(self, timer, seconds, forces=(150., 0.)):
-        self.step(timer, (75., 75.))
-        self.step(timer, forces)  # One-frame contact filter at takeoff.
-        for _ in range(round(seconds / timer.dt)):
-            torch.testing.assert_close(self.step(timer, forces), torch.zeros_like(timer.score))
+    def swing(self, state, seconds, leg=1, height=.06):
+        forces, heights = ([150.,0.], [0.,height]) if leg == 1 else ([0.,150.], [height,0.])
+        self.step(state)
+        self.step(state, forces, heights)  # First missing contact is filtered.
+        for _ in range(round(seconds/.02)):
+            torch.testing.assert_close(self.step(state, forces, heights), torch.zeros_like(state.air_score))
 
-    def test_signed_landing_only_cap_and_support_foot(self):
-        for seconds, expected in ((.04, -.08), (.12, 0.), (.20, .08), (.60, .12)):
-            timer = self.make()
-            self.swing(timer, seconds)
-            self.assertAlmostEqual(float(self.step(timer, (75.,75.))[0]), expected, places=6)
+    def test_signed_landing_only_and_normalization(self):
+        for seconds, expected in ((.04, -2/3), (.12, 0.), (.18, .5), (.24, 1.)):
+            state = self.make()
+            self.swing(state, seconds)
+            self.assertAlmostEqual(float(self.step(state)[0]), expected, places=5)
             for _ in range(5):
-                self.assertEqual(float(self.step(timer, (75.,75.))[0]), 0.)
+                self.assertEqual(float(self.step(state)[0]), 0.)
 
-    def test_zero_command_reset_and_partial_reset_censor_bouts(self):
-        timer = self.make(2)
-        self.swing(timer, .20)
-        timer.reset([0])
-        torch.testing.assert_close(self.step(timer, (75.,75.)), torch.tensor([0., .08]))
-        self.swing(timer, .20)
-        self.step(timer, (150.,0.), enabled=False)
-        torch.testing.assert_close(self.step(timer, (75.,75.)), torch.zeros(2))
-        self.assertTrue(torch.all(timer.time == 0))
+    def test_continuity_alternation_and_microsteps_do_not_advance_history(self):
+        state = self.make()
+        self.swing(state, .04)
+        self.assertLess(float(state.contact_score[0]), .5)
+        self.step(state)
+        self.assertFalse(state.last_valid.any())
+        self.swing(state, .18, height=.03)
+        self.assertEqual(float(self.step(state)[0]), 0.)
+        self.assertFalse(state.last_valid.any())
+        self.swing(state, .18)
+        self.assertAlmostEqual(float(state.contact_score[0]), 1., places=5)
+        self.assertAlmostEqual(float(state.clearance_score[0]), 1., places=5)
+        self.assertGreater(float(self.step(state)[0]), 0.)
+        self.assertEqual(state.last_valid.tolist(), [[False,True]])
+        self.swing(state, .18, leg=1)
+        self.assertEqual(float(state.contact_score[0]), 0.)
+        self.assertEqual(float(state.clearance_score[0]), 0.)
+        self.assertEqual(float(self.step(state)[0]), 0.)
+        self.assertEqual(state.last_valid.tolist(), [[False,True]])
+        self.swing(state, .18, leg=0)
+        self.assertGreater(float(self.step(state)[0]), 0.)
+        self.assertEqual(state.last_valid.tolist(), [[True,False]])
 
-    def test_unsupported_air_has_no_positive_credit_and_contact_glitch_is_ignored(self):
-        timer = self.make()
-        self.swing(timer, .20, forces=(0.,0.))
-        self.assertEqual(float(self.step(timer, (75.,75.))[0]), 0.)
-        self.step(timer, (150.,0.))
-        self.assertEqual(float(self.step(timer, (75.,75.))[0]), 0.)
-        self.swing(timer, .20)
-        self.step(timer, (0.,0.))  # Opposite support lost during the swing.
-        self.assertEqual(float(self.step(timer, (75.,75.))[0]), 0.)
+    def test_overlong_hover_and_unsupported_flight_cannot_farm_positive_rewards(self):
+        state = self.make()
+        self.swing(state, .5)
+        self.assertEqual(float(state.contact_score[0]), 0.)
+        self.assertEqual(float(state.clearance_score[0]), 0.)
+        self.assertEqual(float(self.step(state)[0]), 0.)
+        self.assertFalse(state.last_valid.any())
+        self.swing(state, .18)
+        self.step(state, (0.,0.), (.06,.06))
+        self.assertEqual(float(self.step(state)[0]), 0.)
+        self.assertFalse(state.last_valid.any())
+        self.step(state, (150.,0.), (0.,.06))
+        self.assertEqual(float(self.step(state)[0]), 0.)  # One-frame contact dropout.
+        for _ in range(3):
+            self.step(state, (0.,0.), (.02,.02))
+        self.assertEqual(float(self.step(state)[0]), -1.)  # Two short landings share a bounded penalty.
 
-    def test_left_right_symmetry_and_inference_mode_reset(self):
-        left, right = self.make(), self.make()
+    def test_zero_reset_and_partial_reset_censor_bouts(self):
+        state = self.make(2)
+        self.swing(state, .18)
+        state.reset([0])
+        torch.testing.assert_close(self.step(state), torch.tensor([0.,.5]), atol=1e-6, rtol=0)
+        self.swing(state, .18, leg=0)
+        self.step(state, (0.,150.), (.06,0.), enabled=False)
+        torch.testing.assert_close(self.step(state), torch.zeros(2))
+        self.assertFalse(state.last_valid.any())
+        torch.testing.assert_close(state.observation(torch.zeros(2,dtype=torch.bool)), torch.zeros(2,14))
         with torch.inference_mode():
-            self.swing(left, .2, (0.,150.))
-            self.swing(right, .2, (150.,0.))
-            torch.testing.assert_close(self.step(left, (75.,75.)), self.step(right, (75.,75.)))
-        left.reset([0])
-        self.assertEqual(float(left.score[0]), 0.)
+            self.swing(state, .18)
+        state.reset([0,1])
+        self.assertTrue(torch.all(state.air == 0))
+
+    def test_left_right_mirror_and_observation_contains_all_reward_memory(self):
+        left, right = self.make(), self.make()
+        self.swing(left, .18, leg=0)
+        self.swing(right, .18, leg=1)
+        torch.testing.assert_close(left.observation(torch.tensor([True])).reshape(1,7,2).flip(-1),
+                                   right.observation(torch.tensor([True])).reshape(1,7,2))
+        torch.testing.assert_close(self.step(left), self.step(right))
+        self.assertEqual(left.last_valid.tolist(), [[True,False]])
+        before = left.observation(torch.tensor([True])).clone()
+        torch.testing.assert_close(left.observation(torch.tensor([True])), before)
+        self.assertEqual(before.shape, (1,14))
+        self.assertTrue(torch.all((before >= 0) & (before <= 1)))
+        gate = gait_enabled(torch.tensor([True,True,True,False]), torch.tensor([1.,.6,1.,1.]),
+                            torch.tensor([.52,.52,.3,.52]), .52)
+        self.assertEqual(gate.tolist(), [True,False,False,False])
 
     @unittest.skipUnless(importlib.util.find_spec("tensorboard"), "Runner training dependencies run on server")
     def test_runner_checkpoints_count_completed_updates(self):

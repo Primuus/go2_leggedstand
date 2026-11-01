@@ -1,12 +1,12 @@
 # 本地 MuJoCo sim2sim
 
-本入口运行当前 `go2_handstand` 的 47 维输入、12 维输出 TorchScript 策略，也接受历史 45 维策略用于对照。资产复用用户指定的 `/home/ry/project/quadruped`，部署参考其按名称映射关节/执行器、每个物理步计算 PD 的实现。两个旧工程均未修改，也不作为运行时依赖。
+本入口运行当前 `go2_handstand` 的59维输入、12维输出接触事件策略，也接受历史45/47维策略用于对照。最新已训练策略仍是47维model_4401，59维目前仅有未训练的迁移准备模型，见 [接触事件步态修改](接触事件步态修改.md)。资产复用用户指定的 `/home/ry/project/quadruped`，部署参考其按名称映射关节/执行器、每个物理步计算 PD 的实现。两个旧工程均未修改，也不作为运行时依赖。
 
 ## 复用与适配
 
 - 从 `quadruped/src/controller/rl/resources/robots/go2/` 复制 `go2.xml`、`scene_flat.xml` 和 16 个 OBJ 网格，约 27.11 MiB，保存在本工程 `resources/robots/go2/mujoco/`。这些都是本机文件复制，没有通过服务器链路搬运网格。
 - 三份 Go2 URDF（本工程、quadruped、quadruped_train）的 SHA-256 均为 `4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4`。无需更换当前训练 URDF/DAE。
-- 旧部署为 6×45=270 维 HIM 历史输入，且命令位于前 3 维；当前策略为单帧 47 维，前 45 维保持原接口，尾部为零速归零的 sin/cos 相位；角速度、重力、命令依次占前 9 维。不能复用旧权重或直接运行旧观测构造器。
+- 旧部署为 6×45=270 维 HIM 历史输入，且命令位于前 3 维；当前接口为单帧59维，前45维保持原接口，尾部为14维接触事件状态；历史47维策略仍使用sin/cos相位；角速度、重力、命令依次占前 9 维。不能复用旧权重或直接运行旧观测构造器。
 - 当前训练配置由 `deploy_mujoco/config_loader.py` 直接加载配置源码，隔离配置继承导入，不执行训练任务注册。MuJoCo 环境无需安装 Isaac Gym，也无需安装本工程或旧工程 Python 包。
 - 关节与动作顺序为 FL、FR、RL、RR，各腿 hip/thigh/calf。复用 XML 的执行器排列是 FR、FL、RR、RL；部署按名称查找地址，不能直接把 12 维策略动作写入原始执行器数组。
 - 训练参数直接来自配置：Kp=40、Kd=1，action scale=0.25，物理步长 0.005 秒、decimation=4，50 Hz 策略。机身初始高度 0.52 米、俯仰 −90°，关节初值使用训练参考角，关闭部署侧随机化。
@@ -34,12 +34,12 @@
 
 # 使用本工程训练并导出的 TorchScript 策略，打开 MuJoCo 窗口
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_03-40-54_resume2000_20261101_033932/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_07-02-38_airtime_to4401/exported/policy.pt \
   --speed 0.2 --yaw-rate 0 --duration 60
 
 # 无窗口运行并保存诊断
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_03-40-54_resume2000_20261101_033932/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_07-02-38_airtime_to4401/exported/policy.pt \
   --headless --speed 0.2 --duration 20 \
   --report logs/sim2sim/forward.json
 ```

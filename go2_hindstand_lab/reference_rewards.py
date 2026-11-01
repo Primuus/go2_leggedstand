@@ -134,29 +134,16 @@ class ReferenceRewards:
     def _reward_ang_xz(self):
         return torch.abs(self.base_euler_xyz[:,0])*(self.rew_hanstand>0.70)#*(self.root_states[:,2]>0.45)
 
-    def _reward_feet_clearance(self):#鼓励抬脚高度
-        """Triangular score: grounded=0, target=1, excessive clearance decreases the score."""
-        heights = self.hind_sole_heights
-        swing_mask = (1 - self._get_gait_phase())
-        target = torch.abs(torch.sin(2 * torch.pi * self._get_phase())) * self.cfg.rewards.target_foot_height
-        minimum = self.cfg.rewards.clearance_min_target
-        score = (1 - (heights - target[:, None]).abs() / target.clamp_min(minimum)[:, None]).clamp(0, 1)
-        rew = (score * swing_mask).sum(dim=1) * (target >= minimum)
-        return rew*(torch.mean(self.rew_hanstand)>0.70)*self._moving_command()
+    def _reward_feet_clearance(self):
+        return self.gait.clearance_score
 
     def _reward_contact(self):
-        forces = self.contact_forces[:, self.contact_foot_indices, 2]
-        contact = forces > 1
-        heights = self.hind_sole_heights
-        supported = forces.max(dim=1).values > self.body_weight * self.cfg.rewards.contact_support_weight_fraction
-        raised = ((~contact) & (heights > self.cfg.rewards.contact_min_clearance)).any(dim=1)
-        walking = (contact.sum(dim=1) == 1) & supported & raised
-        standing = contact.all(dim=1)
-        return torch.where(self._moving_command(), walking, standing)*(self.rew_hanstand>0.70)
+        contact = self.contact_forces[:, self.contact_foot_indices, 2] > 1.
+        standing = contact.all(dim=1).float() * (self.rew_hanstand > .70)
+        return torch.where(self._moving_command(), self.gait.contact_score, standing)
 
     def _reward_feet_air_time(self):
-        # Updated once per physical control step, never while querying rewards.
-        return self.air_time.score
+        return self.gait.air_score
 
     def _reward_symmetric_joints(self):
         # 左右关节对称（参考 go2_trot 的对称设置）：前后两对腿都参与

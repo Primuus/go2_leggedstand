@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "79eb0a3d9c05f03efdb71bcb334c0ab5cd8414ba5125ff4312bf8e92982beab3",
+      "local_sha256": "1e6d46cdd89a7be2fbd82315b44c2d14f62d37ada475ef61da5c70ddd70ba6ef",
       "modified": true
     },
     {
@@ -475,23 +475,24 @@
       },
       "implementation_files_sha256": {
         "go2_hindstand_lab/__init__.py": "7dacb23e69cc3a908bc80436a77173d3e411ac9407b6774c89f39d355fec343d",
-        "go2_hindstand_lab/adapter.py": "4263265dd5226c64050ab59e206100935ebd0f0c257636f131a4d82b82c6f669",
+        "go2_hindstand_lab/adapter.py": "a5332b8a662331d340ab87232d3886724f4c45a9ba8cb6f4becf6df07119637a",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
-        "go2_hindstand_lab/checkpoint.py": "0116152990e3f372576e5a15afaa27d6a85345788884fe20ee5b7984bb877578",
-        "go2_hindstand_lab/evaluation.py": "459d738dba8c236bd955900e1683fbc9e75e692b52d11e1e6dde38c3be7ce1ae",
+        "go2_hindstand_lab/checkpoint.py": "c93303c93e00595acf0257753c9137124b0fe11e660064b3fae035c73ae0d539",
+        "go2_hindstand_lab/evaluation.py": "ed76530e32bb6c3323ac3ba20ea092298023ffaf1ba1881096c98e11b6c87906",
         "go2_hindstand_lab/gait_diagnostics.py": "76a9c2ed9576078a9542f63a0a58c8ff850a2d19d4773c57437b5fa034e8c75b",
         "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
-        "go2_hindstand_lab/reference_rewards.py": "fff33b6ccae36fb65f9b8e2d846554a6e8d9869b93ced7f7e3633096a1f035d3",
-        "go2_hindstand_lab/task.py": "07bac8ac22e34b3cf09809b2cd91683bf0ccf1e3a831a0906f498fafa2215f95",
-        "go2_hindstand_lab/validation.py": "9352f3d4b370d128ec893d153876a0de530b79a866ad0a153e7d48f337882244",
+        "go2_hindstand_lab/reference_rewards.py": "ae841cc294910797c092731b6044423cae5c2cad870ed44f4fd793cc9839b7b1",
+        "go2_hindstand_lab/task.py": "92989b73da883d1988ee1b273538a02dcddf1ee2ec67bc470ad1b0fc531d3a81",
+        "go2_hindstand_lab/validation.py": "13aeb34c0e4e2ecc63fcc3dbd8143785728e0467274a0aa8844c26de561335f0",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "af1e21d09e4a07c83724e28ff624083a3e08bfeb0abced05a169eed1db754ddf",
+        "scripts/train_lab.py": "4ba95ec00bb9b1a589c8e101e81dc8d027e36cb5b367a861e81a715d409bac2e",
         "scripts/eval_mujoco.py": "5d25eaacb0d31454f21ee2bc51eab7b5d49be2aaa7ce935a88856711044e512d",
-        "go2_hindstand_lab/air_time.py": "cc50920065f1688aff563c80c0e4fad817d2972d233deaa65da473c1967cf3a0"
+        "deploy_mujoco/sim2sim_go2_handstand.py": "ba90048713740d332b827a9ab4440017a34915c9e955626b1d186691522b36a2",
+        "go2_hindstand_lab/gait_events.py": "00fae6076d7818aa6dad940849ce722c3e44c5de900eb9dbe8b0fb3522e7a6e5"
       },
       "preserved": [
-        "Original 45/86 observations retained through iteration 3300; authorized phase extension now 47/88. 12 ordered actions unchanged.",
-        "23 active reward terms; six formulas and selected weights later refined with user authorization",
+        "12 actions and original45 physical actor inputs preserved; current event extension59/100 replaces the former47/88 clock extension.",
+        "24 active rewards; event changes limited to feet_air_time/contact/feet_clearance; other4401-era terms and weights preserved.",
         "bundled PPO, network and mirror loss",
         "0.52 m reference reset; action-zero reference joints",
         "fixed physics; observation noise"
@@ -509,7 +510,8 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/速度上限05与中止训练记录.md"
+      "latest_training_report": "doc/速度上限05与中止训练记录.md",
+      "latest_implementation_report": "doc/接触事件步态修改.md"
     },
     "stand_walk_refinement": {
       "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
@@ -681,7 +683,7 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "feet_air_time experiment completed exactly 300 additional updates to 4401; stopped, no further training"
+    "training_started": "No training for event gait change; zero-update migration and short interface evaluations complete."
   },
   "feet_air_time_experiment": {
     "authorization": "Enable feet_air_time and train 300 additional updates",
@@ -729,5 +731,48 @@
     "isaac_bounded_evaluation": "logs/go2_handstand/2026-11-01_07-13-19_airtime_bounded_comparison/evaluation.json",
     "result": "MuJoCo partial lift/time gains (0.5m/s median60->80ms, peak4.93->5.51cm); high-speed lateral drift worsened. Isaac Lab medians unchanged; both upright in terrain-bounded15s test. No stable6cm or proven alternating gait.",
     "gui_playback": "normal exit,18.68 simulated seconds,final command0,finite state"
+  },
+  "event_gait_adaptation": {
+    "authorization": "User requested the discussed event-driven gait changes; implementation and validation only",
+    "reward_weights_unchanged": true,
+    "air_time_normalization": "clip((T-.12)/.12,-1,1), landing sum clipped[-1,1]",
+    "valid_step_height_m": 0.04,
+    "clearance_target_m": 0.06,
+    "min_air_time_s": 0.12,
+    "decay_start_s": 0.24,
+    "max_air_time_s": 0.36,
+    "observations": [
+      59,
+      100
+    ],
+    "event_memory_observed": 14,
+    "training_updates": 0,
+    "original_checkpoint_preserved": true,
+    "prepared_run": "logs/go2_handstand/2026-11-01_07-28-03_events_prepare",
+    "prepared_checkpoint": "logs/go2_handstand/2026-11-01_07-28-03_events_prepare/prepared_model_4401.pt",
+    "validation": {
+      "training_updates": 0,
+      "iter": 4401,
+      "dims": [
+        59,
+        100,
+        12
+      ],
+      "source_checkpoint_unchanged": true,
+      "weights_exact_remap": true,
+      "policy_finite_256_inputs": true,
+      "policy_sha256": "ef5fe11051361bd2060b0cb54cde44c2d73611faaf56cc7188adcb37ebc54af9",
+      "policy_bytes": 796626,
+      "migration": {
+        "actor_zero_clock_max_error": 3.5762786865234375e-06,
+        "actor_removed_clock_max_effect": 0.44610023498535156,
+        "critic_zero_clock_max_error": 1.52587890625e-05,
+        "critic_removed_clock_max_effect": 6.2812347412109375
+      }
+    },
+    "local_policy_purpose": "Untrained migration interface validation only",
+    "isaac_interface_report": "logs/go2_handstand/2026-11-01_07-29-07_events_interface_check/evaluation.json",
+    "mujoco_interface_report": "logs/go2_handstand/2026-11-01_07-28-03_events_prepare/exported/mujoco_interface_check.json",
+    "report": "doc/接触事件步态修改.md"
   }
 }

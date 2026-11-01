@@ -1,4 +1,4 @@
-"""Train the phase-observed task on Isaac Lab using the bundled reference PPO."""
+"""Train the contact-driven task on Isaac Lab using the bundled reference PPO."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -17,7 +17,8 @@ parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
 parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
 parser.add_argument("--resume_iteration", type=int, help="Explicit completed-update count for a legacy checkpoint with stale iter metadata")
-parser.add_argument("--migrate_phase", action="store_true", help="Expand a legacy 45/86 checkpoint and Adam state to 47/88")
+parser.add_argument("--migrate_events", action="store_true", help="Replace 47/88 clock inputs with 59/100 contact-state inputs and migrate Adam")
+parser.add_argument("--prepare_only", action="store_true", help="Validate, restore/migrate and export a checkpoint without PPO updates")
 parser.add_argument("--eval_policies", type=Path, nargs="+", help="Evaluate exported policies deterministically; no training")
 parser.add_argument("--evaluation_seconds", type=float, default=20.)
 parser.add_argument("--eval_speeds", type=float, nargs="+", default=[0., .2], help="Fixed forward commands for evaluation")
@@ -29,8 +30,10 @@ AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 if args.resume is not None and not args.resume.is_file():
     parser.error(f"Checkpoint does not exist: {args.resume}")
-if args.migrate_phase and args.resume is None:
-    parser.error("--migrate_phase requires --resume")
+if args.migrate_events and args.resume is None:
+    parser.error("--migrate_events requires --resume")
+if args.prepare_only and (args.resume is None or args.eval_policies or args.validate_only):
+    parser.error("--prepare_only requires --resume and cannot combine with evaluation/validate_only")
 if args.resume_iteration is not None and (args.resume is None or args.resume_iteration < 0):
     parser.error("--resume_iteration requires --resume and a nonnegative count")
 
@@ -76,7 +79,8 @@ def main():
     (log_dir / "validation.json").write_text(json.dumps(report, indent=2))
     print("PREFLIGHT_PASSED", json.dumps(report), flush=True)
     train = to_dict(load_config("Go2_Handstand_PPO_Yu"))
-    train["runner"]["max_iterations"] = args.max_iterations
+    updates = 0 if args.prepare_only or args.validate_only or args.eval_policies else args.max_iterations
+    train["runner"]["max_iterations"] = updates
     train["runner"]["save_interval"] = args.save_interval
     (log_dir / "training_config.json").write_text(json.dumps(train, indent=2))
     (log_dir / "env_config.json").write_text(json.dumps(to_dict(load_config()), indent=2))
@@ -84,7 +88,7 @@ def main():
         ROOT / "rsl_rl/rsl_rl/runners/on_policy_runner.py"]
     provenance = {"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,
-        "max_iterations":args.max_iterations, "seed":args.seed, "initialization":"scratch"}
+        "max_iterations":updates, "seed":args.seed, "initialization":"scratch"}
     runner = None
     if args.eval_policies:
         from go2_hindstand_lab.evaluation import evaluate_policies
@@ -94,13 +98,13 @@ def main():
     if not args.validate_only and not args.eval_policies:
         runner = OnPolicyRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
         if args.resume is not None:
-            if args.migrate_phase:
-                from go2_hindstand_lab.checkpoint import migrate_phase_checkpoint
-                migrated = migrate_phase_checkpoint(torch.load(args.resume, map_location=args.device), runner.alg.actor_critic)
+            if args.migrate_events:
+                from go2_hindstand_lab.checkpoint import migrate_event_checkpoint
+                migrated = migrate_event_checkpoint(torch.load(args.resume, map_location="cpu"), runner.alg.actor_critic)
                 runner.alg.optimizer.load_state_dict(migrated["optimizer_state_dict"])
                 runner.current_learning_iteration = migrated["iter"]
-                provenance["phase_migration"] = migrated["phase_migration"]
-                print("PHASE_MIGRATION_PASSED", migrated["phase_migration"], flush=True)
+                provenance["event_migration"] = migrated["event_migration"]
+                print("EVENT_MIGRATION_PASSED", migrated["event_migration"], flush=True)
             else:
                 runner.load(str(args.resume), load_optimizer=True)
             if args.resume_iteration is not None:
@@ -116,17 +120,20 @@ def main():
                   "learning_rate", runner.alg.learning_rate,
                   "optimizer_state_entries", len(runner.alg.optimizer.state), flush=True)
         provenance.update(start_iteration=runner.current_learning_iteration,
-                          final_iteration=runner.current_learning_iteration + args.max_iterations)
+                          final_iteration=runner.current_learning_iteration + updates)
     (log_dir / "provenance.json").write_text(json.dumps(provenance, indent=2))
     if runner is not None:
         env.reference_state.diagnostics.clear_statistics()
-        runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
+        if args.prepare_only:
+            runner.save(str(log_dir / f"prepared_model_{runner.current_learning_iteration}.pt"))
+        else:
+            runner.learn(num_learning_iterations=updates, init_at_random_ep_len=True)
         for param in runner.alg.actor_critic.parameters():
             assert torch.isfinite(param).all(), "Non-finite trained network"
         export = log_dir / "exported"
         export.mkdir()
         torch.jit.script(runner.alg.actor_critic.actor.cpu()).save(str(export / "policy.pt"))
-        print("TRAINING_COMPLETE", str(log_dir), flush=True)
+        print("PREPARATION_COMPLETE" if args.prepare_only else "TRAINING_COMPLETE", str(log_dir), flush=True)
     env.close()
 
 

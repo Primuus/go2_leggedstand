@@ -5,9 +5,9 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
     class env:
         frame_stack = 1 #action stack
         c_frame_stack = 1 #critic 网络的堆叠帧数
-        num_single_obs = 47 # Original 45 observations plus sin/cos phase (zero at standstill).
+        num_single_obs = 59 # Original 45 plus 14 actual-contact gait state values.
         num_observations = int(frame_stack * num_single_obs) # 10帧正常的观测
-        single_num_privileged_obs = 88  # 3 linear velocity + 47 actor + 34 fixed physics + 4 contacts.
+        single_num_privileged_obs = 100  # 3 linear velocity + 59 actor + 34 fixed physics + 4 contacts.
         num_privileged_obs = int(c_frame_stack * single_num_privileged_obs) # 3帧特权观测
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
@@ -205,7 +205,9 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         contact_min_clearance = 0.02 # Raised rear foot must clear this height.
         contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
         air_time_threshold = 0.12 # Filtered airborne seconds; score only on landing.
-        air_time_reward_cap = 0.12 # Maximum positive score per foot per landing, before dt/weight.
+        gait_valid_height = 0.04 # Minimum swing peak for a completed alternating step.
+        gait_decay_start = 0.24 # Single-support reward starts decaying.
+        gait_max_air_time = 0.36 # No positive reward for indefinite one-leg hovering.
         base_height_target = 0.52#0.25
         target_foot_height=0.06
         max_contact_force = 200. # forces above this value are penalized
@@ -285,7 +287,7 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
         sym_loss = True
-        # 47D Isaac Lab observation mirror: swap legs and shift phase by half a cycle.
+        # 59D mirror: swap left/right gait-state pairs, no external clock.
         # [0:3]角速度: 轴向量 (-wx, wy, -wz) | [3:6]重力投影: 极向量 (gx, -gy, gz)
         # [6:9]命令: (vx, -vy, -wyaw) | [9:21/21:33/33:45] dof_pos/vel/action: FL<->FR, RL<->RR, hip 取反
         obs_permutation = [-0.0001, 1, -2,            # ang_vel
@@ -303,7 +305,7 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
                            -33, 34, 35,                # actions FR <- FL
                            -42, 43, 44,                # actions RL <- RR
                            -39, 40, 41,                # actions RR <- RL
-                           -45, -46]                  # sin/cos(phi + .5) = -sin/cos(phi)
+                           46, 45, 48, 47, 50, 49, 52, 51, 54, 53, 56, 55, 58, 57]
         act_permutation = [-3, 4, 5,-0.0001, 1, 2 , -9, 10, 11,-6, 7, 8,]#关节电机的对陈关系
         frame_stack = 1
         sym_coef = 1.0

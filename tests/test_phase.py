@@ -39,11 +39,11 @@ class PhaseTests(unittest.TestCase):
         torch.testing.assert_close(phase_observation((phase+.5)%1, torch.ones(4, dtype=torch.bool)), -clock, atol=1e-6, rtol=0)
         torch.testing.assert_close(phase_observation(phase, torch.zeros(4, dtype=torch.bool)), torch.zeros(4, 2))
         cfg = load_config("Go2_Handstand_PPO_Yu")
-        matrix = torch.zeros(47, 47)
+        matrix = torch.zeros(59, 59)
         for i, p in enumerate(cfg.algorithm.obs_permutation):
             matrix[int(abs(p)), i] = -1 if p < 0 else 1
-        torch.testing.assert_close(matrix @ matrix, torch.eye(47))
-        torch.testing.assert_close(matrix[-2:, -2:], -torch.eye(2))
+        torch.testing.assert_close(matrix @ matrix, torch.eye(59))
+        torch.testing.assert_close(matrix[45:, 45:], torch.kron(torch.eye(7), torch.tensor([[0.,1.],[1.,0.]])))
 
     def test_migration_preserves_output_adam_and_next_update(self):
         old = ActorCritic(45, 86, 12, actor_hidden_dims=[16, 8], critic_hidden_dims=[16, 8])
@@ -98,6 +98,7 @@ class PhaseTests(unittest.TestCase):
     def test_mujoco_clock_reset_and_zero_command(self):
         from sim2sim_go2_handstand import Runner
         r = Runner()
+        r.num_obs = 47  # Historical clock input remains correct for old policies.
         r.command[0] = .2
         for steps in (0, 1, 20, 40, 60, 80, 1001):
             r.control_steps = steps

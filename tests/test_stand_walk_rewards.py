@@ -8,6 +8,7 @@ import torch
 
 from deploy_mujoco.config_loader import load_config
 from go2_hindstand_lab.reference_rewards import ReferenceRewards
+from go2_hindstand_lab.gait_events import GaitEvents
 
 
 def make_state(count=2):
@@ -30,38 +31,23 @@ def make_state(count=2):
     s.feet_pos = torch.zeros(count, 2, 3)
     s.feet_pos[:, :, 2] = .67
     s.episode_length_buf = torch.full((count,), 20)  # phase=.25, right swing peak
+    s.gait = GaitEvents(count, "cpu", .02, s.cfg.rewards)
     return s
 
 
 class StandWalkRewards(unittest.TestCase):
-    def test_contact_target_depends_on_command(self):
-        s = make_state(6)
-        s.commands[2:, 0] = .2
-        s.contact_forces[:, 2, 2] = 100
-        s.contact_forces[[0, 3], 3, 2] = 50
-        s.hind_sole_heights[2:, 1] = .03
-        s.contact_forces[4, 2, 2] = 20  # One contact with insufficient support load.
-        s.hind_sole_heights[5, 1] = .005  # Loaded support but only a tiny foot lift.
-        self.assertEqual(s._reward_contact().tolist(), [True, False, True, False, False, False])
-        s.contact_forces = s.contact_forces[:, [1, 0, 3, 2]]
-        s.hind_sole_heights = s.hind_sole_heights.flip(1)
-        self.assertEqual(s._reward_contact().tolist(), [True, False, True, False, False, False])
-
-    def test_zero_command_has_no_clearance_incentive(self):
+    def test_standing_contact_and_event_rewards_do_not_depend_on_clock(self):
         s = make_state()
-        s.commands[1, 0] = .2
-        s.hind_sole_heights[:, 1] = .06
-        torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0., 1.]))
-        for height, score in ((0., 0.), (.005, 1/12), (.03, .5), (.09, .5), (.12, 0.)):
-            s.hind_sole_heights[:, 1] = height
-            torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0., score]))
-
-    def test_clearance_near_takeoff_and_landing_is_finite(self):
-        s = make_state(3)
-        s.commands[:, 0] = .2
-        s.hind_sole_heights[:] = .03
-        s.episode_length_buf[:] = torch.tensor([0, 1, 40])
-        torch.testing.assert_close(s._reward_feet_clearance(), torch.zeros(3))
+        s.commands[1,0] = .2
+        s.contact_forces[:,:,2] = 75.
+        s.gait.contact_score[1] = .75
+        s.gait.clearance_score[1] = .5
+        s.gait.air_score[1] = -.5
+        for episode_step in (0, 1, 20, 40, 80, 1001):
+            s.episode_length_buf[:] = episode_step
+            torch.testing.assert_close(s._reward_contact(), torch.tensor([1.,.75]))
+            torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0.,.5]))
+            torch.testing.assert_close(s._reward_feet_air_time(), torch.tensor([0.,-.5]))
 
     def test_front_height_is_relaxed_only_while_moving(self):
         s = make_state()
@@ -97,8 +83,8 @@ class StandWalkRewards(unittest.TestCase):
         active = [n for n in dir(s.cfg.rewards.scales) if not n.startswith('_') and getattr(s.cfg.rewards.scales, n) != 0]
         self.assertEqual(len(active), 24)
         self.assertEqual(s.cfg.rewards.scales.feet_air_time, 1.)
-        self.assertEqual(s.cfg.env.num_observations, 47)
-        self.assertEqual(s.cfg.env.num_privileged_obs, 88)
+        self.assertEqual(s.cfg.env.num_observations, 59)
+        self.assertEqual(s.cfg.env.num_privileged_obs, 100)
         self.assertEqual(s.cfg.rewards.target_foot_height, .06)
         self.assertEqual(s.cfg.rewards.scales.feet_clearance, 2.)
         self.assertFalse(s.cfg.commands.heading_command)
