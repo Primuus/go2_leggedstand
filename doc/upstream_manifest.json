@@ -1115,7 +1115,12 @@
       "max_level": 1,
       "keep_flat": false
     },
-    "status": "preparing",
-    "report": "doc/恢复奖励分支L1续训500轮.md"
+    "status": "completed 500 updates; Isaac Lab drift improved; MuJoCo L1 and high-speed flat regression; stopped",
+    "report": "doc/恢复奖励分支L1续训500轮.md",
+    "run": "logs/go2_handstand/2026-11-01_15-10-17_l1_restored_to5801",
+    "final_iteration": 5801,
+    "completed_updates": 500,
+    "policy_sha256": "d2d8d333c7504fdbe7736f1fc60d0002ab186c50510f63fb79035785193fd727",
+    "github_pushed": false
   }
 }
