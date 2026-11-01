@@ -286,7 +286,7 @@
   "validation": {
     "static": "passed",
     "cpu_ppo": "4 synthetic environments x 24 steps; original network and PPO parameters; symmetry enabled; finite losses",
-    "isaac_gym": "not run: unavailable locally; server runtime dependencies not validated; password SSH and training file sync succeeded",
+    "isaac_gym": "not run: Isaac Gym absent; actual validation now uses the Isaac Lab backend",
     "reward_terms": {
       "action_rate": -0.05,
       "alive": 1.0,
@@ -311,7 +311,8 @@
       "torques": -0.0002,
       "tracking_ang_vel": 2.5,
       "tracking_lin_vel": 2.5
-    }
+    },
+    "isaaclab": "passed actual 64-environment preflight and 3 PPO updates; no formal training"
   },
   "local_deployment": {
     "manifest": "doc/local_asset_manifest.json",
@@ -453,6 +454,54 @@
       "validation": "Actual property callbacks and production tensor initializers on CPU; 3 environments; no domain RNG; unchanged mass/COM; 45/86 finite observations; material randomization reenable passed; 29 reward ASTs unchanged; syntax passed",
       "training_started": false,
       "documentation": "doc/工程说明.md"
+    },
+    "isaaclab_backend": {
+      "date": "2026-11-01",
+      "authorization": "User approved using the working local Isaac Lab project as implementation reference and executing adaptation; later revoked formal training until further instruction",
+      "backend": "ManagerBasedRLEnv",
+      "entrypoint": "./ry_python.sh scripts/train_lab.py",
+      "local_reference": {
+        "project": "/home/ry/workspace/ry_unitree_rl_lab",
+        "files_sha256": {
+          "ry_python.sh": "84c37266483e420b6129cf8d4051c39bdec9b6ad4d8850f256df9c2612ea1d37",
+          "scripts/train_v20.py": "7e168bd4495100839434807f826a1b99f444c53dcbb32d1e842996605ff66005",
+          "ry_go2_biped_walk_v20/robot_cfg.py": "cdb55ab116970bd7b936a13a35f93cc95d0e5fab56f4ce1516cb9792dfc4247d",
+          "ry_go2_biped_walk_v20/gait_mdp.py": "0eda60a3fc0ae5c273d810bb975b4d9d4af1810fba702515d6f49ffa8afc3325",
+          "ry_unitree_rl_lab/assets/robots/unitree.py": "5d5dc1c3fdb54b23fb737990f05fb4214885bddc56a9bacd50b0de864d2d93e6",
+          "ry_unitree_rl_lab/tasks/locomotion/robots/go2_biped_walk/walk_env_cfg.py": "00ba2e0b0db977f549675763506b93d0847ed8a2016303f9fb9ed0f720760888",
+          "ry_unitree_rl_lab/tasks/locomotion/robots/go2_biped_walk/walk_mdp.py": "1163a0f3945fa3fd70b9ab676c3ccdbb5e0bcb5bc3e41c04d46d52260ccc9cae"
+        },
+        "runtime_dependency": false
+      },
+      "implementation_files_sha256": {
+        "go2_hindstand_lab/__init__.py": "7dacb23e69cc3a908bc80436a77173d3e411ac9407b6774c89f39d355fec343d",
+        "go2_hindstand_lab/adapter.py": "674bb0a058913b76afe925c0686428478aae239f9ff81616a6fba4f8e3ae4301",
+        "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
+        "go2_hindstand_lab/reference_rewards.py": "5f560b652d461cece60ddd2682ef0a6021fa57735feb4c7a290cbbf92543b6b2",
+        "go2_hindstand_lab/task.py": "412407758b2463dc6479cb07920a5183e3f86bdd3d43fa87a68475deb3d7a9f3",
+        "go2_hindstand_lab/validation.py": "cac43d9a3476a1511e0f7158b31cb2c12f491be0b1b7e73838c2e21db9dacb29",
+        "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
+        "scripts/train_lab.py": "d8804efdd55dbbc8d81616f58cb5fcd88df8e27306d740fab0118b6aa6a3897f"
+      },
+      "preserved": [
+        "45/86 observations, 12 ordered actions",
+        "23 active reward formulas and weights",
+        "bundled PPO, network and mirror loss",
+        "0.52 m reference reset; action-zero reference joints",
+        "fixed physics; observation noise; source command sampling ranges"
+      ],
+      "explicit_adaptations": [
+        "wxyz quaternion API; named joint/body mappings",
+        "Upright heading uses local -Z horizontal direction instead of vertical +X",
+        "Initialize shared height gate before dependent reward terms; keep source global gate",
+        "Fold massless fixed geometry links into parent while preserving 27 collisions and all massive links; resulting contact counts are aggregated by 19 rigid bodies",
+        "Offline generated flat mesh avoids remote ground USD",
+        "Isaac Lab normal contact forces and engine solver are not claimed identical to Isaac Gym or MuJoCo",
+        "Adapter converts reset/timeouts/episode buffers to bundled PPO interface"
+      ],
+      "validation": "doc/isaaclab_port_validation.json",
+      "formal_training_started": false,
+      "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server"
     }
   },
   "server_sync": {
@@ -460,13 +509,13 @@
     "host": "10.29.150.42",
     "container": "isaac-record",
     "path": "/workspace/go2_hindstand_gym",
-    "scope": "54 tracked files except local-only MuJoCo OBJ meshes; training code/URDF/DAE included",
-    "verification": "SHA-256 equality for all 54 files",
+    "scope": "training source, configuration, URDF and DAE plus local documentation; excludes local-only MuJoCo OBJ meshes",
+    "verification": "SHA-256 checked; expanded Isaac Lab backend included",
     "mesh_source": "server-local /workspace/unitree_ros/robots/go2_description/dae, copied after SHA-256 equality checks",
     "initial_archive_bytes": 77360,
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
-    "isaac_gym_runtime": "not validated",
-    "training_started": false
+    "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
+    "training_started": "small 64-env x 3-update check only; formal training not started"
   }
 }

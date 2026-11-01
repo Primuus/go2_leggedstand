@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_config():
+def load_config(config_class="Go2_Handstand_Cfg_Yu"):
     # These config-only files have exactly two inheritance imports between them.
     # Resolve them in one namespace, without executing envs/__init__.py.
     namespace = {}
@@ -23,4 +23,4 @@ def load_config():
             )
         )]
         exec(compile(tree, str(path), "exec"), namespace)
-    return namespace["Go2_Handstand_Cfg_Yu"]()
+    return namespace[config_class]()

@@ -1,0 +1,161 @@
+{
+  "date": "2026-11-01",
+  "backend": "Isaac Lab 2.2.0 / Isaac Sim 5.0.0-rc.45",
+  "asset_static": {
+    "poses": 5,
+    "collision_count": 27,
+    "max_transform_error": 3.3306690738754696e-16,
+    "identical_reward_and_phase_methods": 31
+  },
+  "runtime": {
+    "mass_kg": 15.018999099731445,
+    "joint_names": [
+      "FL_hip_joint",
+      "FL_thigh_joint",
+      "FL_calf_joint",
+      "FR_hip_joint",
+      "FR_thigh_joint",
+      "FR_calf_joint",
+      "RL_hip_joint",
+      "RL_thigh_joint",
+      "RL_calf_joint",
+      "RR_hip_joint",
+      "RR_thigh_joint",
+      "RR_calf_joint"
+    ],
+    "feet": [
+      "FL_foot",
+      "FR_foot",
+      "RL_foot",
+      "RR_foot"
+    ],
+    "native_joint_names": [
+      "FL_hip_joint",
+      "FR_hip_joint",
+      "RL_hip_joint",
+      "RR_hip_joint",
+      "FL_thigh_joint",
+      "FR_thigh_joint",
+      "RL_thigh_joint",
+      "RR_thigh_joint",
+      "FL_calf_joint",
+      "FR_calf_joint",
+      "RL_calf_joint",
+      "RR_calf_joint"
+    ],
+    "native_body_names": [
+      "base",
+      "FL_hip",
+      "FR_hip",
+      "Head_upper",
+      "RL_hip",
+      "RR_hip",
+      "FL_thigh",
+      "FR_thigh",
+      "Head_lower",
+      "RL_thigh",
+      "RR_thigh",
+      "FL_calf",
+      "FR_calf",
+      "RL_calf",
+      "RR_calf",
+      "FL_foot",
+      "FR_foot",
+      "RL_foot",
+      "RR_foot"
+    ],
+    "initial_base_height_m": 0.5199999809265137,
+    "initial_front_foot_height_m": [
+      0.6700000166893005,
+      0.669999897480011
+    ],
+    "initial_hind_sole_height_m": [
+      -3.725290298461914e-08,
+      -4.470348358154297e-08
+    ],
+    "observation_dims": [
+      45,
+      86
+    ],
+    "reward_count": 23,
+    "initial_reward_scores": {
+      "action_rate": 0.0,
+      "alive": 1.0,
+      "ang_vel_xy": 1.0,
+      "ang_xz": 0.0,
+      "base_height": 1.0,
+      "collision": 0.0,
+      "contact": 0.0,
+      "default_hip_pos": 0.0,
+      "default_pos": 0.0,
+      "default_pos_reward": 1.0,
+      "dof_acc": 0.0,
+      "dof_pos_limits": 0.0,
+      "feet_clearance": 0.9661762118339539,
+      "feet_height_symmetry": 1.1920928955078125e-07,
+      "handstand_feet_height_exp": 0.9999988079071045,
+      "handstand_feet_on_air": 1.0,
+      "handstand_orientation": 7.105427357601002e-15,
+      "lin_vel_z": 1.0,
+      "orientation_symmetry": 0.0,
+      "symmetric_joints": 0.0,
+      "torques": 0.0,
+      "tracking_ang_vel": 0.3963244557380676,
+      "tracking_lin_vel": 0.7739527821540833
+    },
+    "zero_action_initial_pd": "passed",
+    "urdf_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4",
+    "inertia_eigenvalue_max_error": 3.725290298461914e-08,
+    "fixed_joint_parameters": "damping=.1, armature=.01, friction=.2 verified",
+    "zero_action_10_steps_and_reset": "finite; reset restored reference angles (not a balance test)"
+  },
+  "ppo": {
+    "checkpoint_iter": 3,
+    "optimizer_state_present": true,
+    "jit_max_abs_error": 0.0,
+    "training_iterations": 3,
+    "all_logged_scalars_finite": true,
+    "losses": {
+      "Loss/entropy": [
+        17.01742172241211,
+        17.012025833129883,
+        17.004892349243164
+      ],
+      "Loss/value_function": [
+        0.1885467767715454,
+        0.0803668200969696,
+        0.34144315123558044
+      ],
+      "Loss/surrogate": [
+        0.010154382325708866,
+        -0.018891936168074608,
+        -0.01806420460343361
+      ],
+      "Loss/sym": [
+        0.022753272205591202,
+        0.013868389651179314,
+        0.011091658845543861
+      ],
+      "Loss/learning_rate": [
+        9.999999747378752e-06,
+        9.999999747378752e-06,
+        3.3749998692655936e-05
+      ]
+    }
+  },
+  "small_training": {
+    "num_envs": 64,
+    "iterations": 3,
+    "transitions": 4608,
+    "path": "logs/go2_handstand/2026-11-01_02-57-21_lab_smoke_02",
+    "exit_code": 0
+  },
+  "final_preflight": {
+    "path": "logs/go2_handstand/2026-11-01_03-02-08_lab_final_check",
+    "num_envs": 64,
+    "ppo_updates": 0,
+    "exit_code": 0
+  },
+  "formal_training_started": false,
+  "instruction": "User requested stopping after verification; do not start the 1500-iteration training"
+}
