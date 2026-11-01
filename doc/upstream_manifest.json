@@ -511,7 +511,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/接触事件步态500轮续训.md",
+      "latest_training_report": "doc/步幅与可靠换脚300轮续训.md",
       "latest_implementation_report": "doc/步幅与可靠换脚修改.md"
     },
     "stand_walk_refinement": {
@@ -684,7 +684,7 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Latest trained model remains4901; stride migration prepared and evaluated with zero PPO updates. No training process running."
+    "training_started": "This run completed300 updates4901->5201. Concurrent server swing-reference changes detected; shared source/config/manifests not overwritten. Local and server code currently differ."
   },
   "feet_air_time_experiment": {
     "authorization": "Enable feet_air_time and train 300 additional updates",
@@ -862,5 +862,55 @@
       "remaining": "No learning updates; short steps and yaw drift remain. Qualified gait events still zero.",
       "eval_run": "logs/go2_handstand/2026-11-01_08-42-12_stride_compatible_eval"
     }
+  },
+  "stride_gait_training_300": {
+    "authorization": "User requested300 additional updates; later requested background execution and terrain curriculum analysis",
+    "run": "logs/go2_handstand/2026-11-01_13-11-28_stride_to5201",
+    "start": 4901,
+    "end": 5201,
+    "additional_updates": 300,
+    "num_envs": 4096,
+    "environment_steps": 29491200,
+    "training_seconds": 507.65,
+    "source_commit": "b8aa4068e4f9da95285f6e077a946ba5c71773b7",
+    "resume_checkpoint": "logs/go2_handstand/2026-11-01_08-40-47_stride_prepare_compatible/prepared_model_4901.pt",
+    "no_remigration": true,
+    "training_parameters_unchanged": true,
+    "export_validation": {
+      "checkpoint": "logs/go2_handstand/2026-11-01_13-11-28_stride_to5201/model_5201.pt",
+      "checkpoint_sha256": "f3126e95c6a2f5c82264af3d3d7893d46160d465e407383c4723f083197365f6",
+      "iter": 5201,
+      "additional_updates": 300,
+      "optimizer_state_entries": 17,
+      "actor_width": 67,
+      "critic_width": 108,
+      "actions": 12,
+      "policy_sha256": "696fe0a64da5aef60b02831e2d1cd599dbeb21b244da0c4ed3a03d41fd1c043e",
+      "policy_bytes": 813010,
+      "export_max_error": 0.0,
+      "test_inputs": 256,
+      "parameters_finite": true,
+      "source_checkpoint_unchanged": true
+    },
+    "evaluation": {
+      "seconds_per_speed": 10,
+      "speeds": [
+        0,
+        0.2,
+        0.5
+      ],
+      "mujoco": "logs/stride_to5201_checks/mujoco.json",
+      "isaaclab": "logs/go2_handstand/2026-11-01_13-20-50_stride5201_eval/evaluation.json",
+      "all_upright": "MuJoCo all3cases upright; server evaluation excluded",
+      "qualified_steps": 0,
+      "isaaclab_status": "Excluded from controlled comparison: concurrent server gait/config changes detected by provenance hashes"
+    },
+    "result": "MuJoCo: longer air time and improved high-speed span/lateral drift; short steps remain. Isaac Lab controlled comparison pending due concurrent server changes.",
+    "report": "doc/步幅与可靠换脚300轮续训.md",
+    "training_stopped": true
+  },
+  "terrain_curriculum_proposal": {
+    "report": "doc/分级地形课程方案.md",
+    "status": "analysis only; no terrain implementation or training"
   }
 }

@@ -1,6 +1,6 @@
 # 本地 MuJoCo sim2sim
 
-本入口运行当前 `go2_handstand` 的67维输入、12维输出接触/步幅策略，也接受历史45/47/59维策略用于对照。本轮迁移准备模型尚未训练，见 [步幅与可靠换脚修改](步幅与可靠换脚修改.md)。最新已训练策略是59维model_4901，已完成事件步态500轮续训；效果与不足见 [500轮续训结果](接触事件步态500轮续训.md)。资产复用用户指定的 `/home/ry/project/quadruped`，部署参考其按名称映射关节/执行器、每个物理步计算 PD 的实现。两个旧工程均未修改，也不作为运行时依赖。
+本入口运行当前 `go2_handstand` 的67维输入、12维输出接触/步幅策略，也接受历史45/47/59维策略用于对照。最新策略为67维model_5201，已完成步幅与可靠换脚300轮续训；效果与不足见[300轮续训结果](步幅与可靠换脚300轮续训.md)。资产复用用户指定的 `/home/ry/project/quadruped`，部署参考其按名称映射关节/执行器、每个物理步计算 PD 的实现。两个旧工程均未修改，也不作为运行时依赖。
 
 ## 复用与适配
 
@@ -34,12 +34,12 @@
 
 # 使用本工程训练并导出的 TorchScript 策略，打开 MuJoCo 窗口
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_07-37-12_events_to4901/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_13-11-28_stride_to5201/exported/policy.pt \
   --speed 0.2 --yaw-rate 0 --duration 60
 
 # 无窗口运行并保存诊断
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_07-37-12_events_to4901/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_13-11-28_stride_to5201/exported/policy.pt \
   --headless --speed 0.2 --duration 20 \
   --report logs/sim2sim/forward.json
 ```
