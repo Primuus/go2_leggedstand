@@ -19,6 +19,7 @@ parser.add_argument("--resume", type=Path, help="Resume model and optimizer from
 parser.add_argument("--migrate_phase", action="store_true", help="Expand a legacy 45/86 checkpoint and Adam state to 47/88")
 parser.add_argument("--eval_policies", type=Path, nargs="+", help="Evaluate exported policies deterministically; no training")
 parser.add_argument("--evaluation_seconds", type=float, default=20.)
+parser.add_argument("--eval_speeds", type=float, nargs="+", default=[0., .2], help="Fixed forward commands for evaluation")
 parser.add_argument("--save_interval", type=int, default=100)
 parser.add_argument("--run_name", default="reference")
 parser.add_argument("--seed", type=int, default=1)
@@ -83,7 +84,7 @@ def main():
     runner = None
     if args.eval_policies:
         from go2_hindstand_lab.evaluation import evaluate_policies
-        evaluation = evaluate_policies(env, args.eval_policies, args.evaluation_seconds)
+        evaluation = evaluate_policies(env, args.eval_policies, args.evaluation_seconds, args.eval_speeds)
         (log_dir / "evaluation.json").write_text(json.dumps(evaluation, indent=2))
         print("EVALUATION_COMPLETE", str(log_dir), flush=True)
     if not args.validate_only and not args.eval_policies:

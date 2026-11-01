@@ -11,13 +11,19 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
     arrays = {k: np.asarray(v) for k, v in trace.items()}
     count, num_envs = arrays["heights"].shape[:2]
     first = min(round(burn_in_s / dt), count)
-    heights = arrays["heights"][first:]
+    failed = (arrays["position"][..., 2] < .3) | (arrays["upright"] < .7)
+    failures = np.flatnonzero(failed.any(axis=1))
+    last = int(failures[0]) if failures.size else count
+    heights = arrays["heights"][first:last]
     diagnostics = GaitDiagnostics(num_envs, "cpu", dt)
-    for i in range(first, count):
+    for i in range(first, last):
         diagnostics.update(torch.tensor(arrays["heights"][i]), torch.tensor(arrays["forces"][i]),
                            torch.tensor(arrays["phase"][i]), torch.full((num_envs,), speed != 0.))
     result = {"duration_s": count * dt, "command_vx": speed, "num_envs": num_envs,
               "burn_in_s": burn_in_s,
+              "upright_throughout": not bool(failures.size),
+              "first_upright_failure_s": (last+1)*dt if failures.size else None,
+              "gait_window_end_s": last*dt,
               "displacement_world_mean_m": (arrays["position"][-1] - start).mean(0).tolist(),
               "forward_speed_mean_m_s": float((arrays["position"][-1, :, 0] - start[:, 0]).mean() / (count*dt)),
               "base_height_mean_m": float(arrays["position"][..., 2].mean()),
@@ -33,7 +39,7 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
     for env_id in range(num_envs):
         for leg in range(2):
             begin = None
-            for i in range(first+1, count):
+            for i in range(first+1, last):
                 if contact[i-1, env_id, leg] and not contact[i, env_id, leg]:
                     begin = i
                 if contact[i, env_id, leg] and begin is not None:
@@ -49,7 +55,7 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2.):
 
 
 @torch.inference_mode()
-def evaluate_policies(env, paths, seconds):
+def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
     from .task import REF, state
     REF.noise.add_noise = False
     report = {"backend": "Isaac Lab", "observation_noise": False, "cases": []}
@@ -58,7 +64,7 @@ def evaluate_policies(env, paths, seconds):
         policy = torch.jit.load(str(path), map_location=env.device).eval()
         width = dict(policy.named_parameters())["0.weight"].shape[1]
         assert width in (45, 47)
-        for speed in (0., .2):
+        for speed in speeds:
             s.command_override = torch.tensor([speed, 0., 0., 0.], device=env.device)
             obs, _ = env.reset()
             start = (s.robot.data.root_pos_w-env.scene.env_origins).cpu().numpy().copy()

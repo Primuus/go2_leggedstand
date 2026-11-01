@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policies", type=Path, nargs="+", required=True)
     parser.add_argument("--duration", type=float, default=20.)
+    parser.add_argument("--speeds", type=float, nargs="+", default=[0., .2])
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)
@@ -28,7 +29,7 @@ def main():
         # Foot geometry belongs to the calf because the XML merges fixed joints.
         foot_geoms = [runner.model.geom(n + "_foot_collision_0").id for n in ("RL", "RR")]
         dt = runner.cfg.sim.dt * runner.cfg.control.decimation
-        for speed in (0., .2):
+        for speed in args.speeds:
             runner.reset()
             runner.command[:] = [speed, 0., 0.]
             start = runner.data.qpos[None, :3].copy()

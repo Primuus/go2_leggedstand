@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "a747414a033ecee7fcd28b74e211f4cbee08e5a91439889fed745d20b58089d6",
+      "local_sha256": "8bacaf0520e0505738fa69c3a039af1c1c9a8a967bedd61af89cec233ceb4d51",
       "modified": true
     },
     {
@@ -478,15 +478,15 @@
         "go2_hindstand_lab/adapter.py": "4263265dd5226c64050ab59e206100935ebd0f0c257636f131a4d82b82c6f669",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
         "go2_hindstand_lab/checkpoint.py": "0116152990e3f372576e5a15afaa27d6a85345788884fe20ee5b7984bb877578",
-        "go2_hindstand_lab/evaluation.py": "37d4b901aa830ff5d2e93f8afdc20dcc2b62e576630321491dc9c92f2c88ac50",
+        "go2_hindstand_lab/evaluation.py": "459d738dba8c236bd955900e1683fbc9e75e692b52d11e1e6dde38c3be7ce1ae",
         "go2_hindstand_lab/gait_diagnostics.py": "76a9c2ed9576078a9542f63a0a58c8ff850a2d19d4773c57437b5fa034e8c75b",
         "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
         "go2_hindstand_lab/reference_rewards.py": "6d85ae6f7f9b750a533b08b5bdacb96fde287bd0b91451912fc9c8dedb291188",
         "go2_hindstand_lab/task.py": "95de9df7d738fabc924c58dce946f2b14a5b8e5a8a5d28ce90c765b6a8781500",
         "go2_hindstand_lab/validation.py": "6b4cbaeee01faa565e266064e12df2645659e2920125ad42c820ce4e5ba6cacb",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "1e6ba131d080c8c099ebbd4d8582210b765e9a993235f458315240c2ec9e8773",
-        "scripts/eval_mujoco.py": "3c91a18172b469a26f90fbc6c1297cd31fd1a91b1b886a8b5f6346bede33a448"
+        "scripts/train_lab.py": "8a344d98017af3f8e2cd943712c7e1e83152dcebf0700d8f6454668b986da019",
+        "scripts/eval_mujoco.py": "5d25eaacb0d31454f21ee2bc51eab7b5d49be2aaa7ce935a88856711044e512d"
       },
       "preserved": [
         "Original 45/86 observations retained through iteration 3300; authorized phase extension now 47/88. 12 ordered actions unchanged.",
@@ -508,7 +508,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/显式相位与3600轮对照.md"
+      "latest_training_report": "doc/速度上限05与中止训练记录.md"
     },
     "stand_walk_refinement": {
       "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
@@ -610,6 +610,41 @@
         "status": "completed; training stopped"
       },
       "result": "MuJoCo speed .1478→.1827 m/s, post-2s peak .958→1.573 cm, zero drift .228→.174m/20s. Isaac Lab peak1.123→2.354cm; lateral displacement +.068→-.612m. Neither reaches4cm; median valid air duration40ms. Phase match given single support MuJoCo51.0→51.9%, Isaac45.4→54.6%."
+    },
+    "speed_upper_05": {
+      "authorization": "User requested forward speed limit0.5 m/s and700 additional updates from3600; no other training changes. User subsequently reduced target to600 then explicitly stopped; no further training authorized.",
+      "command_range": [
+        0.1,
+        0.5
+      ],
+      "standing_probability": 0.35,
+      "actor_critic_dims": [
+        47,
+        88
+      ],
+      "clearance_weight": 2.0,
+      "target_peak_m": 0.06,
+      "checkpoint_migration": false,
+      "unchanged": "All23 reward formulas and scales, phase, assets, PD, PPO, domain randomization",
+      "preflight_run": "2026-11-01_06-25-10_speed05_preflight",
+      "validation": "12 CPU regression tests, actual64-env preflight andkeyboard speed cap passed; ASTdiff confirms only training setting is commands.ranges.lin_vel_x",
+      "documentation": "doc/速度上限05与中止训练记录.md",
+      "formal_run": {
+        "start_iteration": 3600,
+        "planned_final_iteration": 4300,
+        "num_envs": 4096,
+        "status": "interrupted at user request; no top-up run",
+        "run": "2026-11-01_06-25-56_speed05_to4300",
+        "last_logged_iteration": 4183,
+        "completed_updates_in_process": 584,
+        "last_logged_timesteps": 57409536,
+        "last_saved_checkpoint": "model_4100.pt",
+        "last_saved_actual_total_updates": 4101,
+        "last_saved_updates_this_run": 501,
+        "unsaved_completed_updates": 83,
+        "exported": false
+      },
+      "checkpoint_note": "Upstream intermediate checkpoint iter remains3600; filename4100 saved after update index4100, so actual completed count4101. No checkpoint metadata modified."
     }
   },
   "server_sync": {
@@ -624,6 +659,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Completed authorized phase migration and 300 updates to3600; deterministic Isaac Lab and MuJoCo compared; policy downloaded; stopped."
+    "training_started": "User stopped speed0.5 resumed run; last logged4183, last savedmodel4100; no top-up or new export; latest full export3600."
   }
 }

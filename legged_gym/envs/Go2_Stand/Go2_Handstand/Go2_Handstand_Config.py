@@ -51,7 +51,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         standing_lin_threshold = 0.05
         standing_ang_threshold = 0.1
         class ranges:
-            lin_vel_x = [0.1, 0.35] # min max [m/s], non-standing samples
+            lin_vel_x = [0.1, 0.5] # min max [m/s], non-standing samples
             lin_vel_y = [-0.0, 0.0]   # min max [m/s]
             ang_vel_yaw = [0.0, 0.0]    # min max [rad/s]
             heading = [0.0, 0.0]

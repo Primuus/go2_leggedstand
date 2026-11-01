@@ -121,7 +121,7 @@ class Runner:
             self.command.fill(0)
         elif code == ord("R"):
             self.reset_requested = True
-        self.command[0] = np.clip(self.command[0], -0.2, 0.6)
+        self.command[0] = np.clip(self.command[0], -0.2, self.cfg.commands.ranges.lin_vel_x[1])
         self.command[2] = np.clip(self.command[2], -1., 1.)
 
 
@@ -141,6 +141,8 @@ def main():
         parser.error("--duration must be finite and positive")
     if not math.isfinite(args.speed) or not math.isfinite(args.yaw_rate):
         parser.error("Commands must be finite")
+    if args.speed > load_config().commands.ranges.lin_vel_x[1]:
+        parser.error("--speed exceeds the configured forward command limit")
     torch.set_num_threads(1)
     runner = Runner(args.policy)
     runner.command[:] = [args.speed, 0., args.yaw_rate]

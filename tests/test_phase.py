@@ -17,6 +17,21 @@ from rsl_rl.modules import ActorCritic
 
 
 class PhaseTests(unittest.TestCase):
+    def test_evaluation_excludes_clearance_after_loss_of_upright(self):
+        import numpy as np
+        from go2_hindstand_lab.evaluation import summarize_trace
+        trace = {"heights": np.full((200,1,2), .02), "forces": np.full((200,1,2), 75.),
+                 "phase": np.full((200,1), .25), "position": np.zeros((200,1,3)),
+                 "upright": np.ones((200,1))}
+        trace["position"][...,2] = .52
+        trace["position"][150:,:,2] = .2
+        trace["heights"][150:] = .15
+        report = summarize_trace(trace, .02, .2, trace["position"][0])
+        self.assertFalse(report["upright_throughout"])
+        self.assertAlmostEqual(report["first_upright_failure_s"], 3.02)
+        self.assertEqual(report["steady_sole_peak_m"], [.02,.02])
+        self.assertEqual(report["gait"]["mid_swing_above_4cm_fraction"], 0.)
+
     def test_clock_and_mirror(self):
         phase = torch.tensor([0., .25, .5, .75])
         clock = phase_observation(phase, torch.ones(4, dtype=torch.bool))
