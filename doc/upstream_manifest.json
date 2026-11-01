@@ -1093,7 +1093,29 @@
       "max_level": 1,
       "keep_flat": false
     },
-    "status": "validated, ready for short training",
-    "report": "doc/恢复5201奖励与L1短训对照.md"
+    "status": "completed 100 updates; L1 MuJoCo 0.2 passed, 0.25 failed at 9.64s",
+    "report": "doc/恢复5201奖励与L1短训对照.md",
+    "run": "logs/go2_handstand/2026-11-01_15-02-29_l1_restore5201_to5301",
+    "final_iteration": 5301,
+    "completed_updates": 100,
+    "policy_sha256": "b9e681d291c0ddcc0848b35b7a2327923c040993a649239fbfe044025dd81ae6"
+  },
+  "restore5201_l1_500": {
+    "authorization": "User explicitly requested 500 further updates along the demonstrated restored-reward model5301",
+    "start": 5301,
+    "target": 5801,
+    "requested_updates": 500,
+    "num_envs": 4096,
+    "air_time_event_integral": false,
+    "terrain": {
+      "mode": "rolling",
+      "seed": 1,
+      "initial_level": 1,
+      "min_level": 1,
+      "max_level": 1,
+      "keep_flat": false
+    },
+    "status": "preparing",
+    "report": "doc/恢复奖励分支L1续训500轮.md"
   }
 }
