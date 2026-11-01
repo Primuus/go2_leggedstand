@@ -1046,7 +1046,13 @@
       "max_level": 1,
       "keep_flat": false
     },
-    "status": "validated and ready to start",
-    "report": "doc/L1起伏地形300轮续训.md"
+    "status": "completed 300 updates; Isaac Lab L1 improved; MuJoCo L1 regression, training stopped",
+    "report": "doc/L1起伏地形300轮续训.md",
+    "run": "logs/go2_handstand/2026-11-01_14-20-17_all_l1_to5501",
+    "final_iteration": 5501,
+    "completed_updates": 300,
+    "source_commit": "197f7b510fa1783cdc0d5baa2b13118c18b954ec",
+    "policy_sha256": "3349eb11187717c0dd05dc3bd5aff8f1c27059fd24e3444d0d2605c9c5765600",
+    "github_pushed": false
   }
 }
