@@ -39,6 +39,7 @@ def validate(env):
         robot.data.body_link_quat_w[:, rear_ids].reshape(-1,4), offset.reshape(-1,3)).reshape(env.num_envs,2,3)
     rear_soles = rear_centers[..., 2] - .022 - env.scene.env_origins[:, 2:3]
     torch.testing.assert_close(rear_soles, torch.zeros_like(rear_soles), rtol=0, atol=1e-5)
+    torch.testing.assert_close(s.hind_sole_heights, rear_soles, rtol=0, atol=1e-6)
     joint_limits = robot.data.joint_pos_limits[0, s.joint_ids]
     expected = joint_limits.new_tensor([[float(metadata["limits"][n][k]) for k in ("lower", "upper")] for n in JOINT_NAMES])
     torch.testing.assert_close(joint_limits, expected, rtol=0, atol=1e-5)
@@ -62,7 +63,10 @@ def validate(env):
     s.refresh()
     scores = {name: float(torch.as_tensor(getattr(s, "_reward_"+name)(), device=env.device).float().mean()) for name in SCALES}
     assert abs(scores["base_height"]-1) < 1e-4 and abs(scores["default_pos"]) < 1e-4
-    assert abs(scores["handstand_orientation"]) < 1e-5 and scores["handstand_feet_height_exp"] > .9999
+    assert abs(scores["handstand_orientation"]) < 1e-5
+    expected_front_score = torch.where(s._moving_command(), REF.rewards.moving_front_height_factor, 1.)
+    torch.testing.assert_close(s._reward_handstand_feet_height_exp(), expected_front_score, rtol=1e-4, atol=1e-5)
+    torch.testing.assert_close(s.body_weight, torch.full_like(s.body_weight, metadata["mass"] * abs(REF.sim.gravity[2])), rtol=1e-5, atol=1e-5)
     report = {"mass_kg": float(actual_mass[0]), "joint_names": JOINT_NAMES, "feet": FOOT_NAMES,
               "native_joint_names": robot.joint_names, "native_body_names": robot.body_names,
               "initial_base_height_m": float(root_height[0]), "initial_front_foot_height_m": front[0].tolist(),

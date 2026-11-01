@@ -38,6 +38,7 @@ class State(ReferenceRewards):
         self.default = torch.tensor([REF.init_state.default_joint_angles[n] for n in JOINT_NAMES], device=self.device)
         self.descire_joint_pos = torch.tensor([REF.init_state.descire_joint_angles[n] for n in JOINT_NAMES], device=self.device)
         self.target_gravity = torch.tensor(REF.asset.target_gravity, device=self.device)
+        self.body_weight = self.robot.root_physx_view.get_masses().sum(dim=1).to(self.device) * abs(REF.sim.gravity[2])
         self.soft_dof_pos_limits = self.robot.data.soft_joint_pos_limits[0, self.joint_ids]
         self.previous_velocity = torch.zeros(env.num_envs, 12, device=env.device)
         self.commands = torch.zeros(env.num_envs, 4, device=env.device)
@@ -67,6 +68,12 @@ class State(ReferenceRewards):
         self.torques = data.applied_torque[:, self.joint_ids]
         self.actions, self.last_actions = env.action_manager.action, env.action_manager.prev_action
         self.rigid_state = data.body_link_state_w
+        # Rear-foot collision spheres: local center (-.002, 0, 0), radius .022 m.
+        rear_quat = data.body_link_quat_w[:, self.contact_foot_indices]
+        offset = self.rigid_state.new_tensor([-.002, 0., 0.]).expand(env.num_envs, 2, 3)
+        centers = self.rigid_state[:, self.contact_foot_indices, :3] + quat_apply(
+            rear_quat.reshape(-1, 4), offset.reshape(-1, 3)).reshape(env.num_envs, 2, 3)
+        self.hind_sole_heights = centers[..., 2] - .022 - env.scene.env_origins[:, 2:3]
         self.feet_pos = self.rigid_state[:, self.feet_name_reward_indices, :3]
         self.contact_forces = self.sensor.data.net_forces_w[:, self.sensor_ids]
         self.episode_length_buf = env.episode_length_buf

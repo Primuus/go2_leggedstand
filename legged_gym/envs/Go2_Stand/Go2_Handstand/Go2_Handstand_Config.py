@@ -199,7 +199,10 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         tracking_lin_sigma = 0.04 # Squared velocity error denominator while moving.
         tracking_stand_sigma = 0.0025 # Squared velocity error denominator at standstill.
         moving_rear_posture_factor = 0.2 # Effective rear penalty: -0.1 * 0.2 = -0.02.
-        feet_clearance_error_scale = 30.0 # Inverse metres; reference value was 10.
+        clearance_min_target = 0.01 # Skip normalization near swing takeoff/landing.
+        moving_front_height_factor = 0.4 # Effective weight 5.0 * 0.4 = 2.0.
+        contact_min_clearance = 0.02 # Raised rear foot must clear this height.
+        contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
         base_height_target = 0.52#0.25
         target_foot_height=0.06
         max_contact_force = 200. # forces above this value are penalized

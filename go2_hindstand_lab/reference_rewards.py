@@ -135,30 +135,24 @@ class ReferenceRewards:
         return torch.abs(self.base_euler_xyz[:,0])*(self.rew_hanstand>0.70)#*(self.root_states[:,2]>0.45)
 
     def _reward_feet_clearance(self):#鼓励抬脚高度
-        """
-        Calculates reward based on the clearance of the swing leg from the ground during movement.
-        Encourages appropriate lift of the feet during the swing phase of the gait.
-        """
-        # Compute feet contact mask
-        self.feet_height =self.rigid_state[:, self.feet_indices, 2] - 0.02
-        left_feet_height=self.feet_height[:,2]
-        right_feet_height=self.feet_height[:,3]
-        # Compute swing mask
+        """Triangular score: grounded=0, target=1, excessive clearance decreases the score."""
+        heights = self.hind_sole_heights
         swing_mask = (1 - self._get_gait_phase())
-        phase=self._get_phase()
-        # feet height should larger than target feet height at the peak
-        target_height=(torch.abs(torch.sin(2*torch.pi*phase))*self.cfg.rewards.target_foot_height)
-        # print(left_feet_height.shape,right_feet_height.shape,target_height.shape)
-        rew=torch.exp(-torch.abs(left_feet_height-target_height)*self.cfg.rewards.feet_clearance_error_scale)*swing_mask[:,0]
-        # print(rew[0],torch.sum(torch.abs(left_feet_height-target_height),dim=1)[0])
-        rew+=torch.exp(-torch.abs(right_feet_height-target_height)*self.cfg.rewards.feet_clearance_error_scale)*swing_mask[:,1]
-        # print(rew.shape,left_feet_height.shape)
+        target = torch.abs(torch.sin(2 * torch.pi * self._get_phase())) * self.cfg.rewards.target_foot_height
+        minimum = self.cfg.rewards.clearance_min_target
+        score = (1 - (heights - target[:, None]).abs() / target.clamp_min(minimum)[:, None]).clamp(0, 1)
+        rew = (score * swing_mask).sum(dim=1) * (target >= minimum)
         return rew*(torch.mean(self.rew_hanstand)>0.70)*self._moving_command()
 
     def _reward_contact(self):
-        contact = self.contact_forces[:, self.contact_foot_indices, 2] > 1
-        target_count = torch.where(self._moving_command(), 1, 2)
-        return (torch.sum(contact,dim=1)==target_count)*(self.rew_hanstand>0.70)
+        forces = self.contact_forces[:, self.contact_foot_indices, 2]
+        contact = forces > 1
+        heights = self.hind_sole_heights
+        supported = forces.max(dim=1).values > self.body_weight * self.cfg.rewards.contact_support_weight_fraction
+        raised = ((~contact) & (heights > self.cfg.rewards.contact_min_clearance)).any(dim=1)
+        walking = (contact.sum(dim=1) == 1) & supported & raised
+        standing = contact.all(dim=1)
+        return torch.where(self._moving_command(), walking, standing)*(self.rew_hanstand>0.70)
 
     def _reward_feet_air_time(self):
         # Reward long steps
@@ -203,7 +197,8 @@ class ReferenceRewards:
         feet_height_error = torch.abs(self.feet_pos[:,:,2]- 0.67).sum(dim=1)
         # print(torch.exp(-feet_height_error / (std**2)))
         # print(feet_height_error.shape)
-        return torch.exp(-feet_height_error *10)
+        factor = torch.where(self._moving_command(), self.cfg.rewards.moving_front_height_factor, 1.)
+        return torch.exp(-feet_height_error *10) * factor
 
     def _reward_alive(self):
         return 1.0

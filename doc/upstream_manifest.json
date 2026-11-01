@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "24f8111a5fd833e58e628fff9810ade0e0bb9921ec072da45abdec2eaddba857",
+      "local_sha256": "c5945b4d5690b2f671eea91852ea651875bb33f41298d5741553edb81d8f5b73",
       "modified": true
     },
     {
@@ -477,15 +477,15 @@
         "go2_hindstand_lab/__init__.py": "7dacb23e69cc3a908bc80436a77173d3e411ac9407b6774c89f39d355fec343d",
         "go2_hindstand_lab/adapter.py": "674bb0a058913b76afe925c0686428478aae239f9ff81616a6fba4f8e3ae4301",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
-        "go2_hindstand_lab/reference_rewards.py": "9dd4ad09ced2249837ee7034cf7d2f0621e8479e941b70ea45b881bd6e2ce5c1",
-        "go2_hindstand_lab/task.py": "9155bfa21c85c14d11691a9344b99f1c5227cb4709deb7376f27e18578834b81",
-        "go2_hindstand_lab/validation.py": "1dc1aed04331742d2e8df892aeac6c79a2afc45eae8f77849b307e5b6066c5e7",
+        "go2_hindstand_lab/reference_rewards.py": "6d85ae6f7f9b750a533b08b5bdacb96fde287bd0b91451912fc9c8dedb291188",
+        "go2_hindstand_lab/task.py": "5002798e596f8308e84ee49de640a7f62860ded14d1380c4a24aa60f51397b80",
+        "go2_hindstand_lab/validation.py": "ae3b79c622032653894d7f7762341bf62cf18ccde7472c0283e105cc5e2dd280",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
         "scripts/train_lab.py": "91e214d320b14a1b29c42c456c2c89f99cc6fd0a7717b6ec7accf18ad5875ac1"
       },
       "preserved": [
         "45/86 observations, 12 ordered actions",
-        "23 active reward terms; five formulas and selected weights later refined with user authorization",
+        "23 active reward terms; six formulas and selected weights later refined with user authorization",
         "bundled PPO, network and mirror loss",
         "0.52 m reference reset; action-zero reference joints",
         "fixed physics; observation noise"
@@ -547,6 +547,25 @@
         "policy_sha256": "8a3def59a53af10917feee2ade0fc542e966c28bc2b7154402db7c85756265cc",
         "mujoco_result": "Zero-command forward drift reduced, forward tracking regressed, steady hind-foot lift still about 0.5 cm; hidden phase unchanged; stopped"
       }
+    },
+    "clearance_shape_refinement": {
+      "authorization": "User approved the proposed three existing-reward refinements and 300 resumed updates from model_3000; phase deferred.",
+      "methods_changed_this_round": [
+        "feet_clearance",
+        "contact",
+        "handstand_feet_height_exp"
+      ],
+      "target_peak_m": 0.06,
+      "clearance_weight": 2.0,
+      "minimum_scored_target_m": 0.01,
+      "moving_front_height_effective_weight": 2.0,
+      "standing_front_height_effective_weight": 5.0,
+      "contact_min_clearance_m": 0.02,
+      "contact_support_weight_fraction": 0.5,
+      "height_measurement": "Actual rear collision sphere bottom using foot pose, local center [-.002,0,0], radius .022, relative to ground; assets unchanged",
+      "phase": "unchanged",
+      "documentation": "doc/抬脚评分调整与3300轮对照.md",
+      "validation": "7 CPU tests passed locally and on server; 64-env resume from 3000 for 3 updates, exit 0, physical/preflight/finite/export checks passed"
     }
   },
   "server_sync": {

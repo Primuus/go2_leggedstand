@@ -25,25 +25,50 @@ def make_state(count=2):
     s.feet_indices = [0, 1, 2, 3]
     s.contact_foot_indices = [2, 3]
     s.contact_forces = torch.zeros(count, 4, 3)
+    s.body_weight = torch.full((count,), 15.019 * 9.81)
+    s.hind_sole_heights = torch.zeros(count, 2)
+    s.feet_pos = torch.zeros(count, 2, 3)
+    s.feet_pos[:, :, 2] = .67
     s.episode_length_buf = torch.full((count,), 20)  # phase=.25, right swing peak
     return s
 
 
 class StandWalkRewards(unittest.TestCase):
     def test_contact_target_depends_on_command(self):
-        s = make_state(4)
+        s = make_state(6)
         s.commands[2:, 0] = .2
-        s.contact_forces[:, 2, 2] = 50
+        s.contact_forces[:, 2, 2] = 100
         s.contact_forces[[0, 3], 3, 2] = 50
-        self.assertEqual(s._reward_contact().tolist(), [True, False, True, False])
+        s.hind_sole_heights[2:, 1] = .03
+        s.contact_forces[4, 2, 2] = 20  # One contact with insufficient support load.
+        s.hind_sole_heights[5, 1] = .005  # Loaded support but only a tiny foot lift.
+        self.assertEqual(s._reward_contact().tolist(), [True, False, True, False, False, False])
+        s.contact_forces = s.contact_forces[:, [1, 0, 3, 2]]
+        s.hind_sole_heights = s.hind_sole_heights.flip(1)
+        self.assertEqual(s._reward_contact().tolist(), [True, False, True, False, False, False])
 
     def test_zero_command_has_no_clearance_incentive(self):
         s = make_state()
         s.commands[1, 0] = .2
-        s.rigid_state[:, 3, 2] = .08  # 6 cm under the retained reference height convention
+        s.hind_sole_heights[:, 1] = .06
         torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0., 1.]))
-        s.rigid_state[:, 3, 2] = .02
-        torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0., math.exp(-1.8)]))
+        for height, score in ((0., 0.), (.005, 1/12), (.03, .5), (.09, .5), (.12, 0.)):
+            s.hind_sole_heights[:, 1] = height
+            torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0., score]))
+
+    def test_clearance_near_takeoff_and_landing_is_finite(self):
+        s = make_state(3)
+        s.commands[:, 0] = .2
+        s.hind_sole_heights[:] = .03
+        s.episode_length_buf[:] = torch.tensor([0, 1, 40])
+        torch.testing.assert_close(s._reward_feet_clearance(), torch.zeros(3))
+
+    def test_front_height_is_relaxed_only_while_moving(self):
+        s = make_state()
+        s.commands[1, 0] = .2
+        torch.testing.assert_close(s._reward_handstand_feet_height_exp() * 5., torch.tensor([5., 2.]))
+        s.feet_pos[:, :, 2] += .02
+        torch.testing.assert_close(s._reward_handstand_feet_height_exp() * 5., torch.tensor([5., 2.]) * math.exp(-.4))
 
     def test_linear_tracking_is_tighter_without_changing_angular_tracking(self):
         s = make_state()
@@ -84,7 +109,8 @@ class StandWalkRewards(unittest.TestCase):
         names = {n for n in methods[0] if n.startswith('_reward_') or n in ('_get_phase', '_get_gait_phase')}
         changed = {n for n in names if methods[0][n] != methods[1][n]}
         self.assertEqual(changed, {'_reward_tracking_lin_vel', '_reward_default_pos',
-                                 '_reward_feet_clearance', '_reward_contact', '_reward_symmetric_joints'})
+                                 '_reward_feet_clearance', '_reward_contact', '_reward_symmetric_joints',
+                                 '_reward_handstand_feet_height_exp'})
 
 
 if __name__ == '__main__':
