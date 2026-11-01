@@ -487,7 +487,7 @@
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
         "scripts/train_lab.py": "84f40df264da3c586fe7a692dda5280952373588feaa49a3d482937285e9d114",
         "scripts/eval_mujoco.py": "5c6397603fea26a6afbfb5d2d1f4fb7e72edfbf3626a0f27f60bac36f5154d9d",
-        "deploy_mujoco/sim2sim_go2_handstand.py": "baccef261b82364d0874a9a6a1741239eac379b54cfbdca5eec296e4f0cee2ef",
+        "deploy_mujoco/sim2sim_go2_handstand.py": "2ffedaf49cd059b84e92f157836e29b2b3c0c48603d22cf79f7a3256129a9358",
         "go2_hindstand_lab/gait_events.py": "790cb820a4134e2a2014b8ec1a09b094600a4ad5b81318f06e7d6155a985fe10",
         "go2_hindstand_lab/legacy_events.py": "e1ac1af7217106c6cc9cdda5a47a0aab7d1010790a8aaa3be99337ce106cd086",
         "go2_hindstand_lab/terrain_curriculum.py": "596c7d8eed6bdc0c9e614a350703aa0fced6a01d1b48abf3b26b6161fb2bb0fb",
@@ -1053,6 +1053,29 @@
     "completed_updates": 300,
     "source_commit": "197f7b510fa1783cdc0d5baa2b13118c18b954ec",
     "policy_sha256": "3349eb11187717c0dd05dc3bd5aff8f1c27059fd24e3444d0d2605c9c5765600",
+    "github_pushed": false
+  },
+  "all_l1_training_500": {
+    "authorization": "User requested 500 additional updates after model5501",
+    "start": 5501,
+    "target": 6001,
+    "requested_updates": 500,
+    "num_envs": 4096,
+    "terrain": {
+      "mode": "rolling",
+      "seed": 1,
+      "initial_level": 1,
+      "min_level": 1,
+      "max_level": 1,
+      "keep_flat": false
+    },
+    "status": "completed 500 updates; MuJoCo L1 failed, lateral drift regressed; training stopped",
+    "report": "doc/L1起伏地形500轮续训.md",
+    "viewer_fix": "Explicitly show floor geometry group; rendering only, no dynamics or training changes",
+    "run": "logs/go2_handstand/2026-11-01_14-35-03_all_l1_to6001",
+    "final_iteration": 6001,
+    "completed_updates": 500,
+    "policy_sha256": "93ed4670cfdae6aa12fe88210456f3caee9751f457d405bc1bce65d3a10ed801",
     "github_pushed": false
   }
 }

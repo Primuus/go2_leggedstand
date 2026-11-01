@@ -231,6 +231,8 @@ def main():
     start_pos = runner.data.qpos[:3].copy()
     with context as viewer:
         if viewer is not None:
+            # Rolling ground uses group 5, which MuJoCo hides by default.
+            viewer.opt.geomgroup[int(runner.model.geom("floor").group[0])] = 1
             viewer.cam.lookat[:] = runner.data.qpos[:3]
             viewer.cam.distance = 1.6
             viewer.cam.azimuth = 135.
