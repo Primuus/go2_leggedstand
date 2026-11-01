@@ -56,4 +56,6 @@ class ReferenceVecEnv:
             self.diagnostic_log = diagnostics.summary()
             diagnostics.clear_statistics()
         infos.setdefault("episode", {}).update({"Gait/" + k: v for k, v in self.diagnostic_log.items()})
+        if state(self.env).ground.settings.mode == "rolling":
+            infos["episode"].update(state(self.env).ground.log())
         return self.obs_buf, self.privileged_obs_buf, rewards, terminated | truncated, infos

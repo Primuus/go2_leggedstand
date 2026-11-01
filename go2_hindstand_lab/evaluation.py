@@ -8,6 +8,7 @@ from .gait_diagnostics import GaitDiagnostics
 from .gait_events import ACTOR_OBS_SIZE, GaitEvents, gait_enabled
 from .legacy_events import LegacyEventObservation
 from .phase import phase_observation
+from .terrain_profile import geometry_metadata
 from deploy_mujoco.config_loader import load_config
 
 
@@ -15,7 +16,7 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2., body_weight=None):
     arrays = {k: np.asarray(v) for k, v in trace.items()}
     count, num_envs = arrays["heights"].shape[:2]
     first = min(round(burn_in_s / dt), count)
-    failed = (arrays["position"][..., 2] < .3) | (arrays["upright"] < .7)
+    failed = (arrays.get("base_height", arrays["position"][..., 2]) < .3) | (arrays["upright"] < .7)
     failures = np.flatnonzero(failed.any(axis=1))
     last = int(failures[0]) if failures.size else count
     heights = arrays["heights"][first:last]
@@ -30,8 +31,8 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2., body_weight=None):
               "gait_window_end_s": last*dt,
               "displacement_world_mean_m": (arrays["position"][-1] - start).mean(0).tolist(),
               "forward_speed_mean_m_s": float((arrays["position"][-1, :, 0] - start[:, 0]).mean() / (count*dt)),
-              "base_height_mean_m": float(arrays["position"][..., 2].mean()),
-              "base_height_min_m": float(arrays["position"][..., 2].min()),
+              "base_height_mean_m": float(arrays.get("base_height", arrays["position"][..., 2]).mean()),
+              "base_height_min_m": float(arrays.get("base_height", arrays["position"][..., 2]).min()),
               "upright_cosine_min": float(arrays["upright"].min()),
               "finite": all(np.isfinite(a).all() for a in arrays.values()),
               "steady_sole_peak_m": heights.max(axis=(0, 1)).tolist() if heights.size else None,
@@ -70,7 +71,7 @@ def summarize_trace(trace, dt, speed, start, burn_in_s=2., body_weight=None):
             force = torch.as_tensor(arrays["forces"][i], dtype=torch.float32)
             height = torch.as_tensor(arrays["heights"][i], dtype=torch.float32)
             enabled = gait_enabled(moving, torch.as_tensor(arrays["upright"][i]),
-                                   torch.as_tensor(arrays["position"][i, :, 2]), cfg.base_height_target)
+                                   torch.as_tensor(arrays.get("base_height", arrays["position"][..., 2])[i]), cfg.base_height_target)
             events.update(force, height, enabled, weight,
                           torch.as_tensor(arrays["foot_forward"][i], dtype=torch.float32),
                           torch.full((num_envs,), speed))
@@ -106,6 +107,7 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
     REF.noise.add_noise = False
     report = {"backend": "Isaac Lab", "observation_noise": False, "cases": []}
     s = state(env)
+    s.ground.curriculum.freeze = True
     for path in paths:
         policy = torch.jit.load(str(path), map_location=env.device).eval()
         width = dict(policy.named_parameters())["0.weight"].shape[1]
@@ -115,8 +117,9 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
             obs, _ = env.reset()
             legacy = LegacyEventObservation(env.num_envs, env.device, env.step_dt, REF.rewards) if width == 59 else None
             start = (s.robot.data.root_pos_w-env.scene.env_origins).cpu().numpy().copy()
-            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright", "foot_forward")}
+            trace = {k: [] for k in ("heights", "forces", "phase", "position", "upright", "foot_forward", "base_height")}
             resets = 0
+            early_terminations = 0
             with torch.inference_mode():
                 for _ in range(round(seconds/env.step_dt)):
                     inputs = obs["policy"][:, :width]
@@ -128,22 +131,36 @@ def evaluate_policies(env, paths, seconds, speeds=(0., .2)):
                     obs, _, terminated, truncated, _ = env.step(action)
                     if (terminated | truncated).any():
                         resets += int((terminated | truncated).sum())
+                        early_terminations += int(terminated.sum())
                         break  # Do not mix reset poses into a continuous walking trace.
                     s = state(env)
                     if legacy is not None:
                         enabled = gait_enabled(s._moving_command(), -s.projected_gravity[:, 0],
-                            s.root_states[:, 2]-env.scene.env_origins[:, 2], REF.rewards.base_height_target)
+                            s.base_height, REF.rewards.base_height_target)
                         legacy.update(s.contact_forces[:, s.contact_foot_indices, 2], s.hind_sole_heights, enabled, s.body_weight)
                     values = {"foot_forward": s.hind_forward, "heights": s.hind_sole_heights,
                               "forces": s.contact_forces[:, s.contact_foot_indices, 2],
                               "phase": s._get_phase(), "position": s.robot.data.root_pos_w-env.scene.env_origins,
-                              "upright": -s.projected_gravity[:, 0]}
+                              "upright": -s.projected_gravity[:, 0], "base_height": s.base_height}
                     for key, value in values.items():
                         trace[key].append(value.cpu().numpy().copy())
             result = summarize_trace(trace, env.step_dt, speed, start,
                                      body_weight=s.body_weight.cpu().numpy()) if trace["heights"] else {"duration_s": 0.}
             result.update(policy=str(path), policy_sha256=hashlib.sha256(Path(path).read_bytes()).hexdigest(),
-                          input_width=width, early_resets=resets)
+                          input_width=width, early_resets=resets, early_terminations=early_terminations,
+                          full_window_without_reset=(resets == 0))
+            result["terrain"] = dict(**s.ground.settings.to_dict(), geometry=geometry_metadata())
+            result["terrain_groups"] = []
+            if trace["heights"] and s.ground.settings.mode == "rolling":
+                for level in range(s.ground.settings.max_level+1):
+                    for kind, selection in (("flat", s.ground.columns < 5), ("rolling", s.ground.columns >= 5)):
+                        mask = ((s.ground.levels == level) & selection).cpu().numpy()
+                        if mask.any():
+                            sub = {k: [v[mask] for v in values] for k, values in trace.items()}
+                            group = summarize_trace(sub, env.step_dt, speed, start[mask],
+                                body_weight=s.body_weight.cpu().numpy()[mask])
+                            group.update(kind=kind, level=level, batch_early_resets=resets)
+                            result["terrain_groups"].append(group)
             report["cases"].append(result)
             print("EVAL_CASE", str(path), speed, result, flush=True)
     return report

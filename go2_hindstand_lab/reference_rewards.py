@@ -34,7 +34,7 @@ class ReferenceRewards:
         # Penalize base height away from target
         base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
         # print(self.root_states[0,2])
-        self.rew_hanstand=torch.mean(torch.exp(-torch.abs(base_height - self.cfg.rewards.base_height_target)*5))
+        self.rew_hanstand=torch.exp(-torch.abs(base_height - self.cfg.rewards.base_height_target)*5)
         return torch.exp(-torch.abs(base_height - self.cfg.rewards.base_height_target)*5)
 
     def _reward_torques(self):
@@ -81,12 +81,12 @@ class ReferenceRewards:
         # print(torch.mean(self.rew_hanstand),self.rew_hanstand.shape)
         sigma = torch.where(self._moving_command(), self.cfg.rewards.tracking_lin_sigma,
                             self.cfg.rewards.tracking_stand_sigma)
-        return torch.exp(-(y_error+x_error)/sigma)*(torch.mean(self.rew_hanstand)>0.70)
+        return torch.exp(-(y_error+x_error)/sigma)*(self.rew_hanstand>0.70)
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw) 
         ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 0])
-        return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)*(torch.mean(self.rew_hanstand)>0.70)
+        return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)*(self.rew_hanstand>0.70)
 
     def _reward_default_pos(self):
         # Keep the front-leg reference; relax the rear legs only during walking.
@@ -96,7 +96,7 @@ class ReferenceRewards:
 
     def _reward_default_pos_reward(self):
         # Penalize motion at zero commands
-        return torch.exp(-torch.sum(torch.abs(self.dof_pos - self.descire_joint_pos)[:,:6], dim=1))*(torch.mean(self.rew_hanstand)>0.70)
+        return torch.exp(-torch.sum(torch.abs(self.dof_pos - self.descire_joint_pos)[:,:6], dim=1))*(self.rew_hanstand>0.70)
 
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
@@ -143,7 +143,9 @@ class ReferenceRewards:
         return torch.where(self._moving_command(), self.gait.contact_score, standing)
 
     def _reward_feet_air_time(self):
-        return self.gait.air_score
+        # RewardManager integrates rates with dt. This term is a one-step event.
+        score = self.gait.air_score
+        return score / self.dt if self.cfg.rewards.air_time_event_integral else score
 
     def _reward_symmetric_joints(self):
         # 左右关节对称（参考 go2_trot 的对称设置）：前后两对腿都参与

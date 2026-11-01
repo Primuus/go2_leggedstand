@@ -204,6 +204,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         moving_front_height_factor = 0.4 # Effective weight 5.0 * 0.4 = 2.0.
         contact_min_clearance = 0.02 # Raised rear foot must clear this height.
         contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
+        air_time_event_integral = True # Experimental per-landing integral; dt normalization.
         air_time_threshold = 0.12 # Filtered airborne seconds; score only on landing.
         gait_valid_height = 0.04 # Minimum swing peak for a completed alternating step.
         gait_reliable_air_s = 0.04 # Reliable event, independent of reward quality.
@@ -213,6 +214,11 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         gait_stride_time = 0.3 # Target fore-aft placement = |vx| * this interval.
         gait_max_stride = 0.15 # Verified with current 0.52 m reference posture.
         gait_linear_threshold = 0.05
+        gait_use_swing_reference = False # Contact-timed experimental shaping.
+        gait_swing_target_s = 0.24
+        gait_swing_height_sigma = 0.02
+        gait_swing_span_sigma_fraction = 0.5
+        gait_swing_min_span_sigma = 0.02
         gait_decay_start = 0.24 # Single-support reward starts decaying.
         gait_max_air_time = 0.36 # No positive reward for indefinite one-leg hovering.
         base_height_target = 0.52#0.25

@@ -1,5 +1,6 @@
 """Observable contact events and independently graded swing/placement quality."""
 import torch
+from .swing_reference import swing_reference_score
 
 EVENT_OBS_SIZE = 22
 ACTOR_OBS_SIZE = 45 + EVENT_OBS_SIZE
@@ -104,11 +105,14 @@ class GaitEvents:
         height_score = (1-(heights-cfg.target_foot_height).abs()/cfg.target_foot_height).clamp(0, 1)
         # Equal continuous height / forward-progress scoring; no extra reward term or weight.
         swing_score = torch.where(linear, .5*(height_score+progress), height_score)
+        if cfg.gait_use_swing_reference:
+            swing_score = swing_reference_score(self.air, heights, signed_span,
+                self.start_span*direction, target, linear, cfg)
         decay = ((cfg.gait_max_air_time-self.air)/(cfg.gait_max_air_time-cfg.gait_decay_start)).clamp(0, 1)
         quality = airborne * ordered * load * self.support_ratio * decay
         self.clearance_score.copy_((quality*swing_score).sum(1).clamp(0, 1))
         support_progress = (self.air/cfg.air_time_threshold).clamp(0, 1)
-        process = (quality*support_progress).sum(1)
+        process = (quality*support_progress*(swing_score if cfg.gait_use_swing_reference else 1.)).sum(1)
         touchdown = (self.alternating*self.support_ratio*torch.where(linear, placement, 1.)
                      * (self.air <= cfg.gait_max_air_time+1e-6)).sum(1)
         self.contact_score.copy_((.5*process+.5*touchdown).clamp(0, 1))

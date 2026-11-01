@@ -17,6 +17,8 @@ from .asset import JOINT_NAMES, FOOT_NAMES, ROOT, prepare_urdf, asset_metadata
 from .reference_rewards import ReferenceRewards
 from .gait_events import GaitEvents, EVENT_OBS_SIZE, gait_enabled, forward_foot_positions
 from .gait_diagnostics import GaitDiagnostics
+from .terrain_lab import GroundRuntime
+from .terrain_profile import speed_limit, FINISH_X, SIDE_LIMIT
 
 REF = load_config()
 SCALES = {name: getattr(REF.rewards.scales, name) for name in dir(REF.rewards.scales)
@@ -44,6 +46,7 @@ class State(ReferenceRewards):
         self.soft_dof_pos_limits = self.robot.data.soft_joint_pos_limits[0, self.joint_ids]
         self.previous_velocity = torch.zeros(env.num_envs, 12, device=env.device)
         self.commands = torch.zeros(env.num_envs, 4, device=env.device)
+        self.ground = GroundRuntime(env)
         self.measured_heights = torch.zeros(env.num_envs, 1, device=env.device)
         self.tick = -1
         self.refresh_tick = -1
@@ -62,6 +65,10 @@ class State(ReferenceRewards):
         for i, name in enumerate(("lin_vel_x", "lin_vel_y", "ang_vel_yaw", "heading")):
             lo, hi = getattr(REF.commands.ranges, name)
             self.commands[ids, i] = torch.empty(len(ids), device=self.device).uniform_(lo, hi)
+        if self.ground.settings.mode == "rolling":
+            limit = speed_limit(self.ground.levels[ids], self.ground.columns[ids])
+            lower = REF.commands.ranges.lin_vel_x[0]
+            self.commands[ids, 0] = lower + torch.rand(len(ids), device=self.device)*(limit-lower)
         self.commands[ids[torch.rand(len(ids), device=self.device) < REF.commands.standing_probability]] = 0
 
     def refresh(self):
@@ -85,12 +92,20 @@ class State(ReferenceRewards):
             rear_quat.reshape(-1, 4), offset.reshape(-1, 3)).reshape(env.num_envs, 2, 3)
         forward = centers.new_tensor([0., 0., -1.]).expand(env.num_envs, 3)
         self.hind_forward = forward_foot_positions(centers, data.root_pos_w, quat_apply(data.root_quat_w, forward))
-        self.hind_sole_heights = centers[..., 2] - .022 - env.scene.env_origins[:, 2:3]
-        self.feet_pos = self.rigid_state[:, self.feet_name_reward_indices, :3]
+        ground_heights = self.ground.heights(centers)
+        support = self.ground.update_support(ground_heights, env.episode_length_buf == 0)
+        self.measured_heights = support[:, None]
+        self.base_height = self.root_states[:, 2] - support
+        self.hind_sole_heights = centers[..., 2] - .022 - ground_heights
+        self.feet_pos = self.rigid_state[:, self.feet_name_reward_indices, :3].clone()
+        self.feet_pos[:, :, 2] -= support[:, None]
         self.contact_forces = self.sensor.data.net_forces_w[:, self.sensor_ids]
         self.episode_length_buf = env.episode_length_buf
         if self.tick != env.common_step_counter:
             self.tick = env.common_step_counter
+            if self.ground.settings.mode == "rolling":
+                self.ground.curriculum.advance(data.root_pos_w-env.scene.env_origins,
+                    self.commands[:, 0] * (env.episode_length_buf > 0), env.step_dt)
             ids = (env.episode_length_buf % int(REF.commands.resampling_time / env.step_dt) == 0).nonzero().flatten()
             self.sample(ids)
         if REF.commands.heading_command:
@@ -101,11 +116,11 @@ class State(ReferenceRewards):
             heading = torch.atan2(forward[:, 1], forward[:, 0])
             error = torch.remainder(self.commands[:, 3] - heading + torch.pi, 2*torch.pi) - torch.pi
             self.commands[:, 2] = (.5 * error).clamp(-1, 1)
-        # Initialize the source's shared height gate before dependent reward terms.
+        # Initialize each environment's relative-height gate before reward terms.
         self._reward_base_height()
         if self.gait_tick != env.common_step_counter:
             enabled = gait_enabled(self._moving_command(), -self.projected_gravity[:, 0],
-                                   self.root_states[:, 2] - env.scene.env_origins[:, 2],
+                                   self.base_height,
                                    REF.rewards.base_height_target) & (env.episode_length_buf > 0)
             self.gait.update(self.contact_forces[:, self.contact_foot_indices, 2], self.hind_sole_heights, enabled, self.body_weight, self.hind_forward, self.commands[:, 0])
             self.gait_tick = env.common_step_counter
@@ -166,6 +181,23 @@ def timeout(env):
     return env.episode_length_buf > env.max_episode_length
 
 
+def terrain_success(env):
+    s = state(env)
+    if s.ground.settings.mode == "flat":
+        return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+    local = s.robot.data.root_pos_w-env.scene.env_origins
+    return (local[:, 0] >= FINISH_X) & (local[:, 1].abs() <= .5) & (-s.projected_gravity[:, 0] >= .7) & (s.base_height >= .3)
+
+
+def terrain_failure(env):
+    s = state(env)
+    if s.ground.settings.mode == "flat":
+        return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+    local = s.robot.data.root_pos_w-env.scene.env_origins
+    out = (local[:, 0] <= -2.) | (local[:, 0] >= FINISH_X+.2) | (local[:, 1].abs() >= SIDE_LIMIT)
+    return out | (s.base_height < .3) | (-s.projected_gravity[:, 0] < .7)
+
+
 def fixed_physics(env, env_ids):
     robot = env.scene["robot"]
     materials = robot.root_physx_view.get_material_properties()
@@ -188,6 +220,8 @@ def reset_pose(env, env_ids):
         s.previous_velocity[env_ids] = 0
         s.diagnostics.reset(env_ids)
         s.gait.reset(env_ids)
+        s.ground.curriculum.reset_episode(env_ids)
+        s.ground.support_height[env_ids] = env.scene.env_origins[env_ids, 2]
         s.actor_cache = None
         s.refresh_tick = -1
         s.sample(env_ids)
@@ -196,7 +230,7 @@ def reset_pose(env, env_ids):
 @configclass
 class SceneCfg(InteractiveSceneCfg):
     terrain = TerrainImporterCfg(prim_path="/World/ground", terrain_type="generator", collision_group=-1,
-        terrain_generator=terrain_gen.TerrainGeneratorCfg(size=(8., 8.), border_width=5., num_rows=1, num_cols=1,
+        terrain_generator=terrain_gen.TerrainGeneratorCfg(size=(24., 12.), border_width=2., num_rows=1, num_cols=1,
             curriculum=False, use_cache=False, sub_terrains={"flat": terrain_gen.MeshPlaneTerrainCfg(proportion=1.)}),
         max_init_terrain_level=0,
         physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=1., dynamic_friction=1., restitution=0.,
@@ -237,6 +271,8 @@ class EventsCfg:
 class DoneCfg:
     time_out = TerminationTermCfg(func=timeout, time_out=True)
     body_contact = TerminationTermCfg(func=base_contact)
+    terrain_success = TerminationTermCfg(func=terrain_success, time_out=True)
+    terrain_failure = TerminationTermCfg(func=terrain_failure)
 
 
 RewardsCfg = configclass(type("RewardsCfg", (), {n: RewardTermCfg(func=reward, weight=w, params={"name": n}) for n, w in SCALES.items()}))
@@ -252,6 +288,7 @@ class EnvCfg(ManagerBasedRLEnvCfg):
     terminations: DoneCfg = DoneCfg()
     commands = None
     curriculum = None
+    terrain_settings: dict = {"mode": "flat", "seed": 1, "max_level": 4, "initial_level": 0}
     def __post_init__(self):
         self.decimation, self.sim.dt = REF.control.decimation, REF.sim.dt
         self.episode_length_s = REF.env.episode_length_s

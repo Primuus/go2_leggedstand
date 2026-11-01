@@ -72,3 +72,8 @@
 显式相位的时钟、镜像、模型迁移及新一轮评估见 [显式相位对照](显式相位与3600轮对照.md)。统一无窗口指标入口为 `scripts/eval_mujoco.py --policies <policy.pt> --report <report.json>`，默认零速与 0.2 m/s 各 20 秒，稳态统计排除前 2 秒。
 
 本轮速度上限和 4300 轮结果见 [速度上限对照](速度上限05与中止训练记录.md)。无窗口评估可用 `--speeds 0 0.2 0.5` 指定速度列表。
+
+
+## 连续起伏地形
+
+已加入平地、5/7/9/12度连续起伏坡面；静态地形预览用`--terrain-preview --terrain rolling --terrain-level 4`，其中L4为12度。策略回放可在原命令上追加`--terrain rolling --terrain-level 1`等参数。地形高度场、非plane接触和相对地面高度已适配，完整说明见[本地验证与运行命令](起伏坡地课程与本地验证.md)。

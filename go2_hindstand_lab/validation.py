@@ -32,7 +32,7 @@ def validate(env):
     torch.testing.assert_close(root_height, torch.full_like(root_height, .52), rtol=0, atol=1e-5)
     torch.testing.assert_close(s.dof_pos, s.default.expand_as(s.dof_pos), rtol=0, atol=1e-5)
     torch.testing.assert_close(s.projected_gravity, s.target_gravity.expand_as(s.projected_gravity), rtol=0, atol=1e-5)
-    front = s.feet_pos[:, :, 2] - env.scene.env_origins[:, 2:3]
+    front = s.feet_pos[:, :, 2]
     torch.testing.assert_close(front, torch.full_like(front, .67), rtol=0, atol=1e-5)
     rear_ids = s.contact_foot_indices
     offset = robot.data.body_link_pos_w.new_tensor([-.002, 0., 0.]).expand(env.num_envs, 2, 3)

@@ -13,6 +13,11 @@ sys.path.insert(0, str(ROOT / "rsl_rl"))
 
 from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--terrain", choices=("flat", "rolling"), default="flat")
+parser.add_argument("--terrain_seed", type=int, default=1)
+parser.add_argument("--terrain_max_level", type=int, default=4)
+parser.add_argument("--terrain_initial_level", type=int, default=0)
+parser.add_argument("--terrain_eval_level", type=int, help="Freeze all rolling lanes at this level for evaluation/validation")
 parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
 parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
@@ -57,7 +62,9 @@ from go2_hindstand_lab.task import Environment, EnvCfg
 from go2_hindstand_lab.adapter import ReferenceVecEnv
 from go2_hindstand_lab.validation import validate
 from deploy_mujoco.config_loader import load_config
-from rsl_rl.runners import OnPolicyRunner
+from go2_hindstand_lab.training_runner import TrainingRunner
+from go2_hindstand_lab.terrain_profile import TerrainSettings, geometry_metadata
+from go2_hindstand_lab.terrain_lab import configure_terrain
 import rsl_rl
 
 
@@ -77,7 +84,19 @@ def main():
     print("TRAIN_LOG_DIR", log_dir, flush=True)
     cfg = EnvCfg()
     cfg.scene.num_envs, cfg.sim.device, cfg.seed = args.num_envs, args.device, args.seed
+    settings = TerrainSettings(args.terrain, args.terrain_seed, args.terrain_max_level, args.terrain_initial_level)
+    configure_terrain(cfg, settings)
     env = Environment(cfg=cfg)
+    if args.terrain_eval_level is not None:
+        if args.terrain != "rolling" or not (args.eval_policies or args.validate_only):
+            raise ValueError("--terrain_eval_level requires rolling evaluation or validation")
+        if not 0 <= args.terrain_eval_level <= args.terrain_max_level:
+            raise ValueError("Evaluation level exceeds configured curriculum")
+        g = env.reference_state.ground
+        g.curriculum.freeze = True
+        g.levels[:] = torch.where(g.columns < 5, 0, args.terrain_eval_level)
+        env.scene.terrain.env_origins[:] = env.scene.terrain.terrain_origins[g.levels, g.columns]
+        env.reset()
     report = validate(env)
     (log_dir / "validation.json").write_text(json.dumps(report, indent=2))
     print("PREFLIGHT_PASSED", json.dumps(report), flush=True)
@@ -91,7 +110,7 @@ def main():
         ROOT / "rsl_rl/rsl_rl/runners/on_policy_runner.py"]
     provenance = {"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,
-        "max_iterations":updates, "seed":args.seed, "initialization":"scratch"}
+        "max_iterations":updates, "seed":args.seed, "terrain":settings.to_dict(), "terrain_geometry":geometry_metadata(), "terrain_evaluation_level":args.terrain_eval_level, "initialization":"scratch"}
     runner = None
     if args.eval_policies:
         from go2_hindstand_lab.evaluation import evaluate_policies
@@ -99,7 +118,7 @@ def main():
         (log_dir / "evaluation.json").write_text(json.dumps(evaluation, indent=2))
         print("EVALUATION_COMPLETE", str(log_dir), flush=True)
     if not args.validate_only and not args.eval_policies:
-        runner = OnPolicyRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
+        runner = TrainingRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
         if args.resume is not None:
             if args.migrate_events or args.migrate_stride:
                 from go2_hindstand_lab.checkpoint import migrate_event_checkpoint

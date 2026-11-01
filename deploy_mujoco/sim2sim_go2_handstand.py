@@ -16,14 +16,19 @@ sys.path.insert(0, str(ROOT))
 from go2_hindstand_lab.phase import phase_observation
 from go2_hindstand_lab.gait_events import GaitEvents, ACTOR_OBS_SIZE, gait_enabled, forward_foot_positions
 from go2_hindstand_lab.legacy_events import LegacyEventObservation
+from go2_hindstand_lab.terrain_profile import GroundProfiles, FINISH_X, SIDE_LIMIT, SLOPE_DEGREES, geometry_metadata
+from terrain import build_model
 
 
 class Runner:
-    def __init__(self, policy_path=None):
+    def __init__(self, policy_path=None, terrain="flat", terrain_level=0, terrain_column=5, terrain_seed=1):
         self.cfg = load_config()
-        self.model = mujoco.MjModel.from_xml_path(str(
-            ROOT / "resources/robots/go2/mujoco/scene_flat.xml"
-        ))
+        self.terrain_mode, self.terrain_level, self.terrain_column = terrain, terrain_level, terrain_column
+        self.terrain_seed = terrain_seed
+        self.ground_profiles = GroundProfiles(terrain_seed)
+        self.model = build_model(ROOT / "resources/robots/go2/mujoco/scene_flat.xml",
+                                 terrain, terrain_level, terrain_column, terrain_seed)
+        self.terrain_geom_ids = {self.model.geom("floor").id}
         self.model.opt.timestep = self.cfg.sim.dt
         self.data = mujoco.MjData(self.model)
         # Policy order is FL, FR, RL, RR; the reused XML actuator order differs.
@@ -71,6 +76,7 @@ class Runner:
         self.action.fill(0)
         self.control_steps = 0
         self.gait.reset([0])
+        self.support_height = 0.
         mujoco.mj_forward(self.model, self.data)
 
     def observation(self):
@@ -99,18 +105,29 @@ class Runner:
         return (np.linalg.norm(self.command[:2]) > self.cfg.commands.standing_lin_threshold
                 or abs(self.command[2]) > self.cfg.commands.standing_ang_threshold)
 
+    def ground_heights(self):
+        if self.terrain_mode == "flat":
+            return np.zeros(2)
+        x = torch.tensor(self.data.geom_xpos[self.foot_geoms, 0][None], dtype=torch.float32)
+        return self.ground_profiles.sole_ground(x, torch.tensor([self.terrain_level]),
+                                                torch.tensor([self.terrain_column]))[0].numpy()
+
+    @property
+    def base_height(self):
+        return self.data.qpos[2] - self.support_height
+
     def feet_state(self):
-        heights = self.data.geom_xpos[self.foot_geoms, 2] - self.model.geom_size[self.foot_geoms, 0]
+        heights = self.data.geom_xpos[self.foot_geoms, 2] - self.model.geom_size[self.foot_geoms, 0] - self.ground_heights()
         forces = np.zeros(2, dtype=np.float32)
         for i in range(self.data.ncon):
             contact = self.data.contact[i]
             for leg, geom in enumerate(self.foot_geoms):
                 if geom in (contact.geom1, contact.geom2):
                     other = contact.geom2 if contact.geom1 == geom else contact.geom1
-                    if self.model.geom_type[other] == mujoco.mjtGeom.mjGEOM_PLANE:
+                    if other in self.terrain_geom_ids:
                         force = np.zeros(6)
                         mujoco.mj_contactForce(self.model, self.data, i, force)
-                        forces[leg] += force[0] * abs(contact.frame[2])
+                        forces[leg] += (contact.frame.reshape(3, 3).T @ force[:3])[2] * (1 if contact.geom2 == geom else -1)
         return heights.astype(np.float32), forces
 
     def feet_forward(self):
@@ -138,11 +155,12 @@ class Runner:
             self.data.ctrl[self.aids] = np.clip(torque, limits[:, 0], limits[:, 1])
             mujoco.mj_step(self.model, self.data)
         self.control_steps += 1
+        mujoco.mj_forward(self.model, self.data)
+        self.support_height += .2 * (float(self.ground_heights().mean()) - self.support_height)
         if self.num_obs in (59, ACTOR_OBS_SIZE):
-            mujoco.mj_forward(self.model, self.data)
             heights, forces = self.feet_state()
             enabled = gait_enabled(torch.tensor([self.moving_command()]),
-                torch.tensor([-self.observation()[3]]), torch.tensor([self.data.qpos[2]]),
+                torch.tensor([-self.observation()[3]]), torch.tensor([self.base_height]),
                 self.cfg.rewards.base_height_target)
             args = (torch.from_numpy(forces[None]), torch.from_numpy(heights[None]), enabled, self.body_weight)
             if self.num_obs == 59:
@@ -175,7 +193,12 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--policy", type=Path, help="Exported 67-input stride policy (legacy 45/47/59-input accepted for comparison)")
     mode.add_argument("--check", action="store_true", help="Check model/PD only; does not test a learned policy")
+    mode.add_argument("--terrain-preview", action="store_true", help="View rolling terrain and reference pose without stepping physics")
     mode.add_argument("--pose", action="store_true", help="View the initial reference pose without advancing physics")
+    parser.add_argument("--terrain", choices=("flat", "rolling"), default="flat")
+    parser.add_argument("--terrain-level", type=int, choices=range(5), default=0)
+    parser.add_argument("--terrain-column", type=int, choices=range(10), default=5)
+    parser.add_argument("--terrain-seed", type=int, default=1)
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--duration", type=float, default=60.)
     parser.add_argument("--speed", type=float, default=0.)
@@ -188,13 +211,16 @@ def main():
         parser.error("Commands must be finite")
     if args.speed > load_config().commands.ranges.lin_vel_x[1]:
         parser.error("--speed exceeds the configured forward command limit")
+    if args.terrain_preview and args.terrain != "rolling":
+        parser.error("--terrain-preview requires --terrain rolling")
+    static = args.pose or args.terrain_preview
     torch.set_num_threads(1)
-    runner = Runner(args.policy)
+    runner = Runner(args.policy, args.terrain, args.terrain_level, args.terrain_column, args.terrain_seed)
     runner.command[:] = [args.speed, 0., args.yaw_rate]
     runner.reset_requested = False
     print(f"MuJoCo {mujoco.__version__}: {runner.num_obs} obs, 12 actions, "
           f"dt={runner.cfg.sim.dt}, decimation={runner.cfg.control.decimation}")
-    print("Static initial pose (physics paused)" if args.pose else
+    print("Static initial pose (physics paused)" if static else
           "PD/model check only" if args.check else f"Policy: {args.policy}")
     print("W/S: forward command; Q/E: yaw; Space: zero command; R: reset")
     context = nullcontext(None)
@@ -209,6 +235,26 @@ def main():
             viewer.cam.distance = 1.6
             viewer.cam.azimuth = 135.
             viewer.cam.elevation = -15.
+            if args.terrain_preview:
+                viewer.cam.lookat[:] = [2.3, 0., 0.]
+                viewer.cam.distance = 3.8
+                viewer.cam.azimuth = 90.
+                viewer.cam.elevation = -15.
+                # Mark the centreline at true scale, to make the low smooth relief visible.
+                from go2_hindstand_lab.terrain_profile import profile
+                x, z = profile(args.terrain_level, args.terrain_column, args.terrain_seed)
+                selected = np.flatnonzero((x >= -0.5) & (x <= 6.))[::4]
+                for a, b in zip(selected[:-1], selected[1:]):
+                    index = viewer.user_scn.ngeom
+                    if index >= viewer.user_scn.maxgeom:
+                        break
+                    geom = viewer.user_scn.geoms[index]
+                    mujoco.mjv_initGeom(geom, mujoco.mjtGeom.mjGEOM_CAPSULE, np.zeros(3),
+                        np.zeros(3), np.eye(3).ravel(), np.array([1., .65, .1, 1.]))
+                    mujoco.mjv_connector(geom, mujoco.mjtGeom.mjGEOM_CAPSULE, .003,
+                        np.array([x[a], 0., z[a]+.004]), np.array([x[b], 0., z[b]+.004]))
+                    viewer.user_scn.ngeom += 1
+                print(f"Terrain preview: L{args.terrain_level}, max slope {SLOPE_DEGREES[args.terrain_level]} degrees; orange line follows the actual surface (no vertical exaggeration)", flush=True)
         dt = runner.cfg.sim.dt * runner.cfg.control.decimation
         for _ in range(math.ceil(args.duration / dt)):
             begin = time.monotonic()
@@ -219,16 +265,20 @@ def main():
                 runner.reset_requested = False
                 start_pos = runner.data.qpos[:3].copy()
                 samples.clear()
-            if not args.pose:
+            if not static:
                 runner.step()
-            samples.append((runner.data.qpos[2], -runner.observation()[3]))
+            samples.append((runner.base_height, -runner.observation()[3]))
+            if args.terrain == "rolling" and (runner.data.qpos[0] >= FINISH_X or runner.data.qpos[0] <= -2. or abs(runner.data.qpos[1]) >= SIDE_LIMIT):
+                print("Terrain lane boundary reached; stopping replay")
+                break
             if viewer is not None:
-                if not args.pose:
+                if not static:
                     viewer.cam.lookat[:] = runner.data.qpos[:3]
                 viewer.sync()
                 time.sleep(max(0., dt - (time.monotonic() - begin)))
     report = {
-        "mode": "initial_pose" if args.pose else "model_pd_check" if args.check else "policy",
+        "terrain": {"mode": args.terrain, "level": args.terrain_level, "column": args.terrain_column, "seed": args.terrain_seed, "geometry": geometry_metadata()},
+        "mode": "initial_pose" if static else "model_pd_check" if args.check else "policy",
         "simulated_seconds_since_reset": float(runner.data.time),
         "command": runner.command.tolist(),
         "displacement_world_m": (runner.data.qpos[:3] - start_pos).tolist(),

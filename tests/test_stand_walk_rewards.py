@@ -47,7 +47,7 @@ class StandWalkRewards(unittest.TestCase):
             s.episode_length_buf[:] = episode_step
             torch.testing.assert_close(s._reward_contact(), torch.tensor([1.,.75]))
             torch.testing.assert_close(s._reward_feet_clearance(), torch.tensor([0.,.5]))
-            torch.testing.assert_close(s._reward_feet_air_time(), torch.tensor([0.,-.5]))
+            torch.testing.assert_close(s._reward_feet_air_time() * s.dt, torch.tensor([0.,-.5]))
 
     def test_front_height_is_relaxed_only_while_moving(self):
         s = make_state()
@@ -95,7 +95,7 @@ class StandWalkRewards(unittest.TestCase):
                     if isinstance(node, ast.FunctionDef)} for p in paths]
         names = {n for n in methods[0] if n.startswith('_reward_') or n in ('_get_phase', '_get_gait_phase')}
         changed = {n for n in names if methods[0][n] != methods[1][n]}
-        self.assertEqual(changed, {'_reward_tracking_lin_vel', '_reward_default_pos',
+        self.assertEqual(changed, {'_reward_tracking_lin_vel', '_reward_tracking_ang_vel', '_reward_base_height', '_reward_default_pos_reward', '_reward_default_pos',
                                  '_reward_feet_clearance', '_reward_contact', '_reward_symmetric_joints',
                                  '_reward_handstand_feet_height_exp', '_reward_feet_air_time'})
 
