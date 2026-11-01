@@ -503,7 +503,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/2000轮续训与本地验证.md"
+      "latest_training_report": "doc/站立与抬腿优化及3000轮验证.md"
     },
     "stand_walk_refinement": {
       "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
@@ -537,7 +537,16 @@
       },
       "documentation": "doc/站立与抬腿优化及3000轮验证.md",
       "local_validation": "5 CPU regression tests passed; 23 terms, only 5 reward ASTs changed, both phase ASTs unchanged",
-      "server_validation": "64 environments, restored model_2000, 3 PPO updates, exit 0, preflight and finite parameters/scalars passed; exported Actor matches checkpoint"
+      "server_validation": "64 environments, restored model_2000, 3 PPO updates, exit 0, preflight and finite parameters/scalars passed; exported Actor matches checkpoint",
+      "formal_run": {
+        "run": "2026-11-01_04-24-31_refine_to3000_20261101_042309",
+        "start_iteration": 2000,
+        "final_iteration": 3000,
+        "num_envs": 4096,
+        "exit_code": 0,
+        "policy_sha256": "8a3def59a53af10917feee2ade0fc542e966c28bc2b7154402db7c85756265cc",
+        "mujoco_result": "Zero-command forward drift reduced, forward tracking regressed, steady hind-foot lift still about 0.5 cm; hidden phase unchanged; stopped"
+      }
     }
   },
   "server_sync": {
@@ -552,6 +561,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Completed 4096-env x 1000 updates from scratch, then 1000 resumed updates to iteration 2000; exported both policies locally and evaluated in MuJoCo"
+    "training_started": "Completed original 2000 updates and authorized existing-reward refinement to 3000; final policies exported locally; all training stopped"
   }
 }

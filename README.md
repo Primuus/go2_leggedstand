@@ -2,7 +2,7 @@
 
 训练任务提取自 [yusongmin1/My_unitree_go2_gym](https://github.com/yusongmin1/My_unitree_go2_gym) 的 `go2_handstand`，当前已适配服务器现有 Isaac Lab，保留参考仓库自带 PPO、45/86 维观测与 23 项奖励。
 
-当前入口为 `./ry_python.sh scripts/train_lab.py`。适配、短训练验证和实际运行说明见 [Isaac Lab 适配记录](doc/IsaacLab适配与小步验证.md)。已完成首轮 1000 轮及追加 1000 轮，累计 2000 轮策略已下载本地，见 [续训及 MuJoCo 对比结果](doc/2000轮续训与本地验证.md)。
+当前入口为 `./ry_python.sh scripts/train_lab.py`。适配、短训练验证和实际运行说明见 [Isaac Lab 适配记录](doc/IsaacLab适配与小步验证.md)。已完成累计 3000 轮，本轮已有奖励优化的策略已下载本地：零速漂移改善，行走和抬腿尚未达目标，见 [最新对比结果](doc/站立与抬腿优化及3000轮验证.md)。
 
 安装、训练、回放与源码分析见 [doc/工程说明.md](doc/工程说明.md)。逐文件来源与改动标记见 [doc/upstream_manifest.json](doc/upstream_manifest.json)。
 
