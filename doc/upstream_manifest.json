@@ -1098,7 +1098,18 @@
     "run": "logs/go2_handstand/2026-11-01_15-02-29_l1_restore5201_to5301",
     "final_iteration": 5301,
     "completed_updates": 100,
-    "policy_sha256": "b9e681d291c0ddcc0848b35b7a2327923c040993a649239fbfe044025dd81ae6"
+    "policy_sha256": "b9e681d291c0ddcc0848b35b7a2327923c040993a649239fbfe044025dd81ae6",
+    "isaaclab_l1_speed05_evaluation": {
+      "run": "logs/go2_handstand/2026-11-01_15-27-13_l1_5301_speed05_eval",
+      "num_envs": 16,
+      "seconds": 15,
+      "command_vx": 0.5,
+      "upright_throughout": true,
+      "early_resets": 0,
+      "forward_world_x_speed_m_s": 0.40731067657470704,
+      "lateral_mean_m": 1.7147865295410156,
+      "ppo_updates": 0
+    }
   },
   "restore5201_l1_500": {
     "authorization": "User explicitly requested 500 further updates along the demonstrated restored-reward model5301",
@@ -1121,6 +1132,17 @@
     "final_iteration": 5801,
     "completed_updates": 500,
     "policy_sha256": "d2d8d333c7504fdbe7736f1fc60d0002ab186c50510f63fb79035785193fd727",
-    "github_pushed": false
+    "github_pushed": false,
+    "speed05_cross_sim_evaluation": {
+      "isaaclab_l1_run": "logs/go2_handstand/2026-11-01_15-29-09_l1_5801_speed05_eval",
+      "isaaclab_flat_run": "logs/go2_handstand/2026-11-01_15-29-53_flat_5801_speed05_eval",
+      "isaaclab_num_envs": 16,
+      "seconds": 15,
+      "command_vx": 0.5,
+      "isaaclab_both_upright_no_reset": true,
+      "mujoco_l1_failure_s": 1.4,
+      "mujoco_flat_failure_s": 4.3,
+      "ppo_updates": 0
+    }
   }
 }
