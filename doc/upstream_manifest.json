@@ -644,7 +644,28 @@
         "unsaved_completed_updates": 83,
         "exported": false
       },
-      "checkpoint_note": "Upstream intermediate checkpoint iter remains3600; filename4100 saved after update index4100, so actual completed count4101. No checkpoint metadata modified."
+      "checkpoint_note": "Upstream intermediate checkpoint iter remains3600; filename4100 saved after update index4100, so actual completed count4101. No checkpoint metadata modified.",
+      "checkpoint_export_4100": {
+        "source_checkpoint": "logs/go2_handstand/2026-11-01_06-25-56_speed05_to4300/model_4100.pt",
+        "checkpoint_sha256": "8f52e584eb655144ae22af611fe6f8361e555fae38806e46f65a52384775f46e",
+        "stored_iteration": 3600,
+        "actual_completed_updates": 4101,
+        "naming_note": "Original runner saves filename4100 after update index4100; iter field remains run start3600. Checkpoint unchanged.",
+        "actor_dim": 47,
+        "critic_dim": 88,
+        "actions": 12,
+        "export_max_error": 0.0,
+        "test_inputs": 256,
+        "parameters_finite": true,
+        "policy_sha256": "1637345f6bf1ebd62da22d193967aa4d8281400242225d6e9de3c70f9c5d1602",
+        "policy_bytes": 772050,
+        "training_started": false,
+        "local_policy": "logs/go2_handstand/2026-11-01_06-25-56_speed05_to4300/exported_4100/policy.pt",
+        "compressed_transfer_bytes": 717424,
+        "evaluation": "logs/go2_handstand/2026-11-01_06-25-56_speed05_to4300/exported_4100/mujoco_evaluation.json",
+        "gui_start_command_m_s": 0.2,
+        "result": "20s MuJoCo cases0/.2/.5 all upright by diagnostic; walking steady peaks3.81/4.93cm, speeds.203/.439m/s; lateral drift and zero drift remain; no6cm."
+      }
     }
   },
   "server_sync": {
@@ -659,6 +680,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "User stopped speed0.5 resumed run; last logged4183, last savedmodel4100; no top-up or new export; latest full export3600."
+    "training_started": "User-stopped run remains stopped; exported model_4100 separately and viewed locally, no training updates."
   }
 }
