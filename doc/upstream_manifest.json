@@ -691,7 +691,15 @@
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
     "training_started": "This run completed300 updates4901->5201. Concurrent server swing-reference changes detected; shared source/config/manifests not overwritten. Local and server code currently differ.",
-    "latest_local_status": "User requested local edits only; rolling terrain source not synchronized. Server may continue separate reward experiments; recheck before any future sync."
+    "latest_local_status": "User authorized direct overwrite from local; no merge of remote wide-stance changes. Tracked file hashes verified, excluding local-only OBJ meshes.",
+    "last_direct_overwrite": {
+      "base_local_commit": "e17999a",
+      "archive_bytes": 77081,
+      "overwritten_files": 26,
+      "preflight_run": "logs/go2_handstand/2026-11-01_14-09-18_rolling_overwrite_preflight",
+      "historical_tests_archived": "logs/terrain_sync_archive/20261101T140908Z",
+      "training_started": false
+    }
   },
   "feet_air_time_experiment": {
     "authorization": "Enable feet_air_time and train 300 additional updates",
@@ -918,7 +926,7 @@
   },
   "terrain_curriculum_proposal": {
     "report": "doc/分级地形课程方案.md",
-    "status": "Implemented locally; only continuous rolling slopes; no server sync or training"
+    "status": "Implemented and synchronized by direct local overwrite; Isaac Lab preflight passed; no training"
   },
   "swing_reference_experiment": {
     "date": "2026-11-01",
@@ -999,7 +1007,19 @@
         "skipped": 1
       },
       "mujoco_geometry": "ray heights, ground contact, bounded slope and profile queries pass",
-      "isaaclab": "Not run: local installation absent and user prohibited server sync",
+      "isaaclab": {
+        "run": "logs/go2_handstand/2026-11-01_14-09-18_rolling_overwrite_preflight",
+        "num_envs": 64,
+        "rolling_level": 4,
+        "exit_code": 0,
+        "preflight_passed": true,
+        "ppo_updates": 0,
+        "server_tests": {
+          "total": 36,
+          "passed": 32,
+          "skipped": 4
+        }
+      },
       "mujoco_replay": {
         "policy_branch": "swing_reference_round2_100/model_5125",
         "5deg_10s_upright": true,
@@ -1009,6 +1029,7 @@
         "report": "logs/terrain_integration/rolling_12deg_20s.json"
       }
     },
-    "checkpoint_resume": "Code added for curriculum levels/history/geometry; full Isaac Lab checkpoint roundtrip pending"
+    "checkpoint_resume": "Full training/checkpoint roundtrip remains pending",
+    "server_sync_status": "Direct overwrite from local authorized by user; Isaac Lab64-env preflight passed; no PPO updates"
   }
 }
