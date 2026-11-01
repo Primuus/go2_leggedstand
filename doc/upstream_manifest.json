@@ -1077,5 +1077,23 @@
     "completed_updates": 500,
     "policy_sha256": "93ed4670cfdae6aa12fe88210456f3caee9751f457d405bc1bce65d3a10ed801",
     "github_pushed": false
+  },
+  "restore5201_l1_100": {
+    "authorization": "User approved restoring model5201 reward scaling and short L1 retraining",
+    "start": 5201,
+    "target": 5301,
+    "requested_updates": 100,
+    "num_envs": 4096,
+    "air_time_event_integral": false,
+    "terrain": {
+      "mode": "rolling",
+      "seed": 1,
+      "initial_level": 1,
+      "min_level": 1,
+      "max_level": 1,
+      "keep_flat": false
+    },
+    "status": "validated, ready for short training",
+    "report": "doc/恢复5201奖励与L1短训对照.md"
   }
 }

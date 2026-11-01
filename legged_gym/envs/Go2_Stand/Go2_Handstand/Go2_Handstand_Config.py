@@ -204,7 +204,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         moving_front_height_factor = 0.4 # Effective weight 5.0 * 0.4 = 2.0.
         contact_min_clearance = 0.02 # Raised rear foot must clear this height.
         contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
-        air_time_event_integral = True # Experimental per-landing integral; dt normalization.
+        air_time_event_integral = False # Restore model_5201 event reward scaling for the L1 comparison.
         air_time_threshold = 0.12 # Filtered airborne seconds; score only on landing.
         gait_valid_height = 0.04 # Minimum swing peak for a completed alternating step.
         gait_reliable_air_s = 0.04 # Reliable event, independent of reward quality.
