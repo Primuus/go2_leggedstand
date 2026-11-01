@@ -96,8 +96,8 @@ class StandWalkRewards(unittest.TestCase):
         s = make_state()
         active = [n for n in dir(s.cfg.rewards.scales) if not n.startswith('_') and getattr(s.cfg.rewards.scales, n) != 0]
         self.assertEqual(len(active), 23)
-        self.assertEqual(s.cfg.env.num_observations, 45)
-        self.assertEqual(s.cfg.env.num_privileged_obs, 86)
+        self.assertEqual(s.cfg.env.num_observations, 47)
+        self.assertEqual(s.cfg.env.num_privileged_obs, 88)
         self.assertEqual(s.cfg.rewards.target_foot_height, .06)
         self.assertEqual(s.cfg.rewards.scales.feet_clearance, 2.)
         self.assertFalse(s.cfg.commands.heading_command)

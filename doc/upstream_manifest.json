@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "c5945b4d5690b2f671eea91852ea651875bb33f41298d5741553edb81d8f5b73",
+      "local_sha256": "a747414a033ecee7fcd28b74e211f4cbee08e5a91439889fed745d20b58089d6",
       "modified": true
     },
     {
@@ -475,16 +475,21 @@
       },
       "implementation_files_sha256": {
         "go2_hindstand_lab/__init__.py": "7dacb23e69cc3a908bc80436a77173d3e411ac9407b6774c89f39d355fec343d",
-        "go2_hindstand_lab/adapter.py": "674bb0a058913b76afe925c0686428478aae239f9ff81616a6fba4f8e3ae4301",
+        "go2_hindstand_lab/adapter.py": "4263265dd5226c64050ab59e206100935ebd0f0c257636f131a4d82b82c6f669",
         "go2_hindstand_lab/asset.py": "b2168ae7545b74e6686906b99bbfb925acc70fc143e0bfb44c7ce53b193b1587",
+        "go2_hindstand_lab/checkpoint.py": "0116152990e3f372576e5a15afaa27d6a85345788884fe20ee5b7984bb877578",
+        "go2_hindstand_lab/evaluation.py": "37d4b901aa830ff5d2e93f8afdc20dcc2b62e576630321491dc9c92f2c88ac50",
+        "go2_hindstand_lab/gait_diagnostics.py": "76a9c2ed9576078a9542f63a0a58c8ff850a2d19d4773c57437b5fa034e8c75b",
+        "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
         "go2_hindstand_lab/reference_rewards.py": "6d85ae6f7f9b750a533b08b5bdacb96fde287bd0b91451912fc9c8dedb291188",
-        "go2_hindstand_lab/task.py": "5002798e596f8308e84ee49de640a7f62860ded14d1380c4a24aa60f51397b80",
-        "go2_hindstand_lab/validation.py": "ae3b79c622032653894d7f7762341bf62cf18ccde7472c0283e105cc5e2dd280",
+        "go2_hindstand_lab/task.py": "95de9df7d738fabc924c58dce946f2b14a5b8e5a8a5d28ce90c765b6a8781500",
+        "go2_hindstand_lab/validation.py": "6b4cbaeee01faa565e266064e12df2645659e2920125ad42c820ce4e5ba6cacb",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "91e214d320b14a1b29c42c456c2c89f99cc6fd0a7717b6ec7accf18ad5875ac1"
+        "scripts/train_lab.py": "1e6ba131d080c8c099ebbd4d8582210b765e9a993235f458315240c2ec9e8773",
+        "scripts/eval_mujoco.py": "3c91a18172b469a26f90fbc6c1297cd31fd1a91b1b886a8b5f6346bede33a448"
       },
       "preserved": [
-        "45/86 observations, 12 ordered actions",
+        "Original 45/86 observations retained through iteration 3300; authorized phase extension now 47/88. 12 ordered actions unchanged.",
         "23 active reward terms; six formulas and selected weights later refined with user authorization",
         "bundled PPO, network and mirror loss",
         "0.52 m reference reset; action-zero reference joints",
@@ -503,7 +508,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/抬脚评分调整与3300轮对照.md"
+      "latest_training_report": "doc/显式相位与3600轮对照.md"
     },
     "stand_walk_refinement": {
       "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
@@ -575,6 +580,36 @@
         "policy_sha256": "92440c2b23dd4d00790f997990fc345dcaffc975fe9567859c3eefdc03b12c02",
         "result": "Forward speed increased to .1478 m/s for .2 command; post-2s hind sole peaks about .0095 m; zero-command drift increased to .2281 m over 20s; phase unchanged; stopped"
       }
+    },
+    "explicit_phase": {
+      "authorization": "User approved steps 1 and 2 (explicit phase and read-only actual gait diagnostics) and 300 resumed updates. Step 3 (weight 15 / signed clearance) excluded.",
+      "actor_dim": 47,
+      "critic_dim": 88,
+      "phase_encoding": "sin/cos appended to actor, zero at standstill; original 1.6s episode clock retained; clock continues while standing; both components negate under left/right mirror",
+      "checkpoint_migration": "Actor columns appended at45, critic columns inserted at48; new weights and Adam moments zero; original iteration/LR/Adam states preserved",
+      "diagnostics": "Contact Fz>1N; completed air durations/peaks with reset and command censoring; phase match given single support; 4/6cm rates. No reward/observation dependency.",
+      "reference": "https://github.com/fan-ziqi/robot_lab/blob/v2.2.1/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+      "reward_methods_sha256": "6d85ae6f7f9b750a533b08b5bdacb96fde287bd0b91451912fc9c8dedb291188",
+      "reward_count": 23,
+      "clearance_weight": 2.0,
+      "target_peak_m": 0.06,
+      "validation": "11 local CPU tests passed; 10 server CPU tests passed and local MuJoCo test skipped; actual 64-env migration +3 PPO updates passed, 47/88 finite parameters; actor migration maxerror0, critic1.52587890625e-5",
+      "smoke_run": "2026-11-01_06-11-15_phase_smoke",
+      "documentation": "doc/显式相位与3600轮对照.md",
+      "formal_run": {
+        "run": "2026-11-01_06-12-12_phase_to3600",
+        "start_iteration": 3300,
+        "final_iteration": 3600,
+        "num_envs": 4096,
+        "exit_code": 0,
+        "training_seconds": 351.48,
+        "new_transitions": 29491200,
+        "policy_bytes": 772050,
+        "policy_sha256": "46ada1816c46148a4d1cfdf0cf1062704d4cda490405b734118c8a88b5cf8fda",
+        "actor_phase_column_norm": 0.7479089498519897,
+        "status": "completed; training stopped"
+      },
+      "result": "MuJoCo speed .1478→.1827 m/s, post-2s peak .958→1.573 cm, zero drift .228→.174m/20s. Isaac Lab peak1.123→2.354cm; lateral displacement +.068→-.612m. Neither reaches4cm; median valid air duration40ms. Phase match given single support MuJoCo51.0→51.9%, Isaac45.4→54.6%."
     }
   },
   "server_sync": {
@@ -589,6 +624,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Completed authorized 300-update comparison from model_3000 to model_3300; export downloaded and MuJoCo compared; training stopped"
+    "training_started": "Completed authorized phase migration and 300 updates to3600; deterministic Isaac Lab and MuJoCo compared; policy downloaded; stopped."
   }
 }

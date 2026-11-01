@@ -1,16 +1,19 @@
-"""Reference 45D handstand policy on the locally reused Go2 MuJoCo model."""
+"""Phase-observed handstand policy on Go2 MuJoCo; legacy policies remain evaluable."""
 import argparse
 from contextlib import nullcontext
 import json
 import math
 from pathlib import Path
 import time
+import sys
 
 import mujoco
 import numpy as np
 import torch
 
 from config_loader import ROOT, load_config
+sys.path.insert(0, str(ROOT))
+from go2_hindstand_lab.phase import phase_observation
 
 
 class Runner:
@@ -37,16 +40,20 @@ class Runner:
         self.action = np.zeros(12, dtype=np.float32)
         self.command = np.zeros(3, dtype=np.float32)
         self.policy = None
+        self.num_obs = 47
         if policy_path is not None:
             self.policy = torch.jit.load(str(policy_path), map_location="cpu").eval()
+            self.num_obs = dict(self.policy.named_parameters())["0.weight"].shape[1]
+            if self.num_obs not in (45, 47):
+                raise ValueError(f"Unsupported policy input width: {self.num_obs}")
             with torch.inference_mode():
-                self.validate_action(self.policy(torch.zeros(1, 45)))
+                self.validate_action(self.policy(torch.zeros(1, self.num_obs)))
         self.reset()
 
     @staticmethod
     def validate_action(output):
         if output.shape != (1, 12) or not torch.isfinite(output).all():
-            raise ValueError("Expected a finite [1, 12] action from a [1, 45] observation")
+            raise ValueError("Expected a finite [1, 12] action")
 
     def reset(self):
         mujoco.mj_resetData(self.model, self.data)
@@ -56,6 +63,7 @@ class Runner:
         self.data.qpos[3:7] = [q[3], q[0], q[1], q[2]]
         self.data.qpos[self.qadr] = self.default
         self.action.fill(0)
+        self.control_steps = 0
         mujoco.mj_forward(self.model, self.data)
 
     def observation(self):
@@ -70,8 +78,16 @@ class Runner:
             (self.data.qpos[self.qadr] - self.default) * scale.dof_pos,
             self.data.qvel[self.vadr] * scale.dof_vel, self.action,
         )).astype(np.float32)
+        if self.num_obs == 47:
+            moving = (np.linalg.norm(self.command[:2]) > self.cfg.commands.standing_lin_threshold
+                      or abs(self.command[2]) > self.cfg.commands.standing_ang_threshold)
+            clock = phase_observation(torch.tensor(self.phase(), dtype=torch.float32), torch.tensor(moving))
+            obs = np.concatenate((obs, clock.numpy()))
         return np.clip(obs, -self.cfg.normalization.clip_observations,
                        self.cfg.normalization.clip_observations)
+
+    def phase(self):
+        return (self.control_steps * self.cfg.sim.dt * self.cfg.control.decimation) % self.cfg.rewards.cycle_time / self.cfg.rewards.cycle_time
 
     def step(self):
         if self.policy is not None:
@@ -87,6 +103,7 @@ class Runner:
             limits = self.model.actuator_ctrlrange[self.aids]
             self.data.ctrl[self.aids] = np.clip(torque, limits[:, 0], limits[:, 1])
             mujoco.mj_step(self.model, self.data)
+        self.control_steps += 1
         if not np.isfinite(self.data.qpos).all() or not np.isfinite(self.data.qvel).all():
             raise RuntimeError("Non-finite simulation state")
 
@@ -111,7 +128,7 @@ class Runner:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--policy", type=Path, help="Exported 45-input TorchScript policy")
+    mode.add_argument("--policy", type=Path, help="Exported 47-input policy (legacy 45-input accepted for comparison)")
     mode.add_argument("--check", action="store_true", help="Check model/PD only; does not test a learned policy")
     mode.add_argument("--pose", action="store_true", help="View the initial reference pose without advancing physics")
     parser.add_argument("--headless", action="store_true")
@@ -128,7 +145,7 @@ def main():
     runner = Runner(args.policy)
     runner.command[:] = [args.speed, 0., args.yaw_rate]
     runner.reset_requested = False
-    print(f"MuJoCo {mujoco.__version__}: 45 obs, 12 actions, "
+    print(f"MuJoCo {mujoco.__version__}: {runner.num_obs} obs, 12 actions, "
           f"dt={runner.cfg.sim.dt}, decimation={runner.cfg.control.decimation}")
     print("Static initial pose (physics paused)" if args.pose else
           "PD/model check only" if args.check else f"Policy: {args.policy}")

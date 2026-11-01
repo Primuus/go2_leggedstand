@@ -15,6 +15,8 @@ from isaaclab.utils.math import euler_xyz_from_quat, quat_apply
 from deploy_mujoco.config_loader import load_config
 from .asset import JOINT_NAMES, FOOT_NAMES, ROOT, prepare_urdf, asset_metadata
 from .reference_rewards import ReferenceRewards
+from .phase import phase_observation
+from .gait_diagnostics import GaitDiagnostics
 
 REF = load_config()
 SCALES = {name: getattr(REF.rewards.scales, name) for name in dir(REF.rewards.scales)
@@ -46,9 +48,15 @@ class State(ReferenceRewards):
         self.tick = -1
         self.refresh_tick = -1
         self.actor_cache = None
+        self.diagnostics = GaitDiagnostics(env.num_envs, env.device, env.step_dt)
+        self.diagnostic_tick = -1
+        self.command_override = None
         self.sample(torch.arange(env.num_envs, device=env.device))
 
     def sample(self, ids):
+        if self.command_override is not None:
+            self.commands[ids] = self.command_override
+            return
         for i, name in enumerate(("lin_vel_x", "lin_vel_y", "ang_vel_yaw", "heading")):
             lo, hi = getattr(REF.commands.ranges, name)
             self.commands[ids, i] = torch.empty(len(ids), device=self.device).uniform_(lo, hi)
@@ -91,6 +99,10 @@ class State(ReferenceRewards):
             self.commands[:, 2] = (.5 * error).clamp(-1, 1)
         # Initialize the source's shared height gate before dependent reward terms.
         self._reward_base_height()
+        if self.diagnostic_tick != env.common_step_counter and torch.any(env.episode_length_buf > 0):
+            self.diagnostics.update(self.hind_sole_heights, self.contact_forces[:, self.contact_foot_indices, 2],
+                                    self._get_phase(), self._moving_command())
+            self.diagnostic_tick = env.common_step_counter
         self.refresh_tick = env.common_step_counter
 
 
@@ -107,11 +119,12 @@ def actor_observation(env):
         scale = REF.normalization.obs_scales
         obs = torch.cat((s.base_ang_vel * scale.ang_vel, s.projected_gravity,
                          s.commands[:, :3] * s.commands.new_tensor([scale.lin_vel, scale.lin_vel, scale.ang_vel]),
-                         (s.dof_pos - s.default) * scale.dof_pos, s.dof_vel * scale.dof_vel, s.actions), -1)
+                         (s.dof_pos - s.default) * scale.dof_pos, s.dof_vel * scale.dof_vel, s.actions,
+                         phase_observation(s._get_phase(), s._moving_command())), -1)
         if REF.noise.add_noise:
             n = REF.noise.noise_scales
             noise = obs.new_tensor([n.ang_vel*scale.ang_vel]*3 + [n.gravity]*3 + [0.]*3 +
-                                   [n.dof_pos*scale.dof_pos]*12 + [n.dof_vel*scale.dof_vel]*12 + [0.]*12)
+                                   [n.dof_pos*scale.dof_pos]*12 + [n.dof_vel*scale.dof_vel]*12 + [0.]*14)
             noise *= REF.noise.noise_level
             obs = obs + (2*torch.rand_like(obs)-1)*noise
         s.actor_cache = obs.clamp(-REF.normalization.clip_observations, REF.normalization.clip_observations)
@@ -163,6 +176,7 @@ def reset_pose(env, env_ids):
     if hasattr(env, "reference_state"):
         s = env.reference_state
         s.previous_velocity[env_ids] = 0
+        s.diagnostics.reset(env_ids)
         s.actor_cache = None
         s.refresh_tick = -1
         s.sample(env_ids)

@@ -5,9 +5,9 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
     class env:
         frame_stack = 1 #action stack
         c_frame_stack = 1 #critic 网络的堆叠帧数
-        num_single_obs = 45 #这个是传感器可以获得到的信息（已删前3个零：zeros(2)+stand_command）
+        num_single_obs = 47 # Original 45 observations plus sin/cos phase (zero at standstill).
         num_observations = int(frame_stack * num_single_obs) # 10帧正常的观测
-        single_num_privileged_obs = 86  # =3(线速度)+45(观测)+34(域随机)+4(足接触)，旧值89(obs 48维时)
+        single_num_privileged_obs = 88  # 3 linear velocity + 47 actor + 34 fixed physics + 4 contacts.
         num_privileged_obs = int(c_frame_stack * single_num_privileged_obs) # 3帧特权观测
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
@@ -282,7 +282,7 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
         sym_loss = True
-        # 45 维 obs 镜像置换表（与 compute_observations 布局严格对齐）：
+        # 47D Isaac Lab observation mirror: swap legs and shift phase by half a cycle.
         # [0:3]角速度: 轴向量 (-wx, wy, -wz) | [3:6]重力投影: 极向量 (gx, -gy, gz)
         # [6:9]命令: (vx, -vy, -wyaw) | [9:21/21:33/33:45] dof_pos/vel/action: FL<->FR, RL<->RR, hip 取反
         obs_permutation = [-0.0001, 1, -2,            # ang_vel
@@ -299,7 +299,8 @@ class Go2_Handstand_PPO_Yu(LeggedRobotCfgPPO):
                            -36, 37, 38,                # actions FL <- FR
                            -33, 34, 35,                # actions FR <- FL
                            -42, 43, 44,                # actions RL <- RR
-                           -39, 40, 41]                # actions RR <- RL
+                           -39, 40, 41,                # actions RR <- RL
+                           -45, -46]                  # sin/cos(phi + .5) = -sin/cos(phi)
         act_permutation = [-3, 4, 5,-0.0001, 1, 2 , -9, 10, 11,-6, 7, 8,]#关节电机的对陈关系
         frame_stack = 1
         sym_coef = 1.0

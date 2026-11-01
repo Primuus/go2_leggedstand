@@ -1,4 +1,4 @@
-"""Train the reference 45D task on Isaac Lab using the bundled reference PPO."""
+"""Train the phase-observed task on Isaac Lab using the bundled reference PPO."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -16,6 +16,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
 parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
+parser.add_argument("--migrate_phase", action="store_true", help="Expand a legacy 45/86 checkpoint and Adam state to 47/88")
+parser.add_argument("--eval_policies", type=Path, nargs="+", help="Evaluate exported policies deterministically; no training")
+parser.add_argument("--evaluation_seconds", type=float, default=20.)
 parser.add_argument("--save_interval", type=int, default=100)
 parser.add_argument("--run_name", default="reference")
 parser.add_argument("--seed", type=int, default=1)
@@ -24,6 +27,8 @@ AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 if args.resume is not None and not args.resume.is_file():
     parser.error(f"Checkpoint does not exist: {args.resume}")
+if args.migrate_phase and args.resume is None:
+    parser.error("--migrate_phase requires --resume")
 
 # Same startup ordering as the working ry_unitree_rl_lab entry point.
 import torch
@@ -76,10 +81,23 @@ def main():
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,
         "max_iterations":args.max_iterations, "seed":args.seed, "initialization":"scratch"}
     runner = None
-    if not args.validate_only:
+    if args.eval_policies:
+        from go2_hindstand_lab.evaluation import evaluate_policies
+        evaluation = evaluate_policies(env, args.eval_policies, args.evaluation_seconds)
+        (log_dir / "evaluation.json").write_text(json.dumps(evaluation, indent=2))
+        print("EVALUATION_COMPLETE", str(log_dir), flush=True)
+    if not args.validate_only and not args.eval_policies:
         runner = OnPolicyRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
         if args.resume is not None:
-            runner.load(str(args.resume), load_optimizer=True)
+            if args.migrate_phase:
+                from go2_hindstand_lab.checkpoint import migrate_phase_checkpoint
+                migrated = migrate_phase_checkpoint(torch.load(args.resume, map_location=args.device), runner.alg.actor_critic)
+                runner.alg.optimizer.load_state_dict(migrated["optimizer_state_dict"])
+                runner.current_learning_iteration = migrated["iter"]
+                provenance["phase_migration"] = migrated["phase_migration"]
+                print("PHASE_MIGRATION_PASSED", migrated["phase_migration"], flush=True)
+            else:
+                runner.load(str(args.resume), load_optimizer=True)
             # The reference loader restores Adam but not PPO's adaptive LR field.
             runner.alg.learning_rate = runner.alg.optimizer.param_groups[0]["lr"]
             provenance.update(initialization="resume", resume_checkpoint=str(args.resume.resolve()),
@@ -92,6 +110,7 @@ def main():
                           final_iteration=runner.current_learning_iteration + args.max_iterations)
     (log_dir / "provenance.json").write_text(json.dumps(provenance, indent=2))
     if runner is not None:
+        env.reference_state.diagnostics.clear_statistics()
         runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
         for param in runner.alg.actor_critic.parameters():
             assert torch.isfinite(param).all(), "Non-finite trained network"
