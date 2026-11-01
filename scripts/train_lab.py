@@ -14,13 +14,16 @@ sys.path.insert(0, str(ROOT / "rsl_rl"))
 from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--num_envs", type=int, default=4096)
-parser.add_argument("--max_iterations", type=int, default=1500)
+parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
+parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
 parser.add_argument("--save_interval", type=int, default=100)
 parser.add_argument("--run_name", default="reference")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--validate_only", action="store_true")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
+if args.resume is not None and not args.resume.is_file():
+    parser.error(f"Checkpoint does not exist: {args.resume}")
 
 # Same startup ordering as the working ry_unitree_rl_lab entry point.
 import torch
@@ -68,11 +71,26 @@ def main():
     train["runner"]["save_interval"] = args.save_interval
     (log_dir / "training_config.json").write_text(json.dumps(train, indent=2))
     sources = list((ROOT / "go2_hindstand_lab").glob("*.py")) + [Path(__file__), ROOT / "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py"]
-    (log_dir / "provenance.json").write_text(json.dumps({"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
+    provenance = {"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,
-        "max_iterations":args.max_iterations, "seed":args.seed, "initialization":"scratch"}, indent=2))
+        "max_iterations":args.max_iterations, "seed":args.seed, "initialization":"scratch"}
+    runner = None
     if not args.validate_only:
         runner = OnPolicyRunner(ReferenceVecEnv(env), train, log_dir=str(log_dir), device=args.device)
+        if args.resume is not None:
+            runner.load(str(args.resume), load_optimizer=True)
+            # The reference loader restores Adam but not PPO's adaptive LR field.
+            runner.alg.learning_rate = runner.alg.optimizer.param_groups[0]["lr"]
+            provenance.update(initialization="resume", resume_checkpoint=str(args.resume.resolve()),
+                resume_checkpoint_sha256=hashlib.sha256(args.resume.read_bytes()).hexdigest(),
+                optimizer_restored=True, restored_learning_rate=runner.alg.learning_rate)
+            print("RESUMED", str(args.resume), "iteration", runner.current_learning_iteration,
+                  "learning_rate", runner.alg.learning_rate,
+                  "optimizer_state_entries", len(runner.alg.optimizer.state), flush=True)
+        provenance.update(start_iteration=runner.current_learning_iteration,
+                          final_iteration=runner.current_learning_iteration + args.max_iterations)
+    (log_dir / "provenance.json").write_text(json.dumps(provenance, indent=2))
+    if runner is not None:
         runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
         for param in runner.alg.actor_critic.parameters():
             assert torch.isfinite(param).all(), "Non-finite trained network"
