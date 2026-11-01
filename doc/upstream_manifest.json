@@ -502,7 +502,8 @@
       "validation": "doc/isaaclab_port_validation.json",
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
-      "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation."
+      "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
+      "latest_training_report": "doc/2000轮续训与本地验证.md"
     }
   },
   "server_sync": {
@@ -517,6 +518,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Completed 4096-env x 1000 updates; user authorized another 1000 updates from model_1000.pt"
+    "training_started": "Completed 4096-env x 1000 updates from scratch, then 1000 resumed updates to iteration 2000; exported both policies locally and evaluated in MuJoCo"
   }
 }

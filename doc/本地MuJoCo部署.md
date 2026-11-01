@@ -34,17 +34,17 @@
 
 # 使用本工程训练并导出的 TorchScript 策略，打开 MuJoCo 窗口
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_03-17-29_train1000_20261101_031607/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_03-40-54_resume2000_20261101_033932/exported/policy.pt \
   --speed 0.2 --yaw-rate 0 --duration 60
 
 # 无窗口运行并保存诊断
 /home/ry/miniconda3/envs/RL/bin/python deploy_mujoco/sim2sim_go2_handstand.py \
-  --policy logs/go2_handstand/2026-11-01_03-17-29_train1000_20261101_031607/exported/policy.pt \
+  --policy logs/go2_handstand/2026-11-01_03-40-54_resume2000_20261101_033932/exported/policy.pt \
   --headless --speed 0.2 --duration 20 \
   --report logs/sim2sim/forward.json
 ```
 
-`--policy`、`--check` 与 `--pose` 必须三选一。`--pose` 使用训练配置的初始高度、机身朝向和关节角，保持静态供观察，不代表已经实现动态平衡。`--policy` 读取导出的 TorchScript Actor，不是训练 checkpoint 字典。当前 Isaac Lab 训练入口结束时自动导出 `exported/policy.pt`，详见 [Isaac Lab 验证说明](IsaacLab适配与小步验证.md)。已有本轮第 1000 轮策略，见 [训练及 MuJoCo 结果](1000轮训练与本地验证.md)；不能使用旧 270 维策略代替。
+`--policy`、`--check` 与 `--pose` 必须三选一。`--pose` 使用训练配置的初始高度、机身朝向和关节角，保持静态供观察，不代表已经实现动态平衡。`--policy` 读取导出的 TorchScript Actor，不是训练 checkpoint 字典。当前 Isaac Lab 训练入口结束时自动导出 `exported/policy.pt`，详见 [Isaac Lab 验证说明](IsaacLab适配与小步验证.md)。已有累计第 2000 轮策略，见 [续训及 MuJoCo 结果](2000轮续训与本地验证.md)；不能使用旧 270 维策略代替。
 
 窗口获取焦点后：W/S 增减前向命令，Q/E 增减转向命令，空格清零命令，R 重置。前向键盘范围 −0.2～0.6 m/s，转向 −1～1 rad/s；横向为零。命令行可显式指定其他有限速度用于测试。键盘使用 MuJoCo 窗口回调，不需要 evdev 权限、pygame 或 pynput。
 
@@ -57,7 +57,7 @@
 - 在 5 组不同姿态、关节状态下，与参考环境实际 `compute_observations` 的 45 维结果一致，容差 2e−7；Critic 输入为 86 维。部署进程未导入 Isaac Gym。
 - 临时导出原网络结构的随机初始化 Actor，验证 TorchScript 加载、推理和 0.2 秒物理循环；270 维旧接口被拒绝。临时测试权重已删除，没有用随机策略宣称训练效果。
 - EGL 离屏渲染用于检查场景和网格；交互窗口/键盘仍需用户图形会话实际体验。
-- 第 1000 轮策略已通过本地零速度及 0.2 m/s 命令各 20 秒仿真，保持后腿直立、前脚离地；前进实际均速约 0.086 m/s，低于指令，零速度有前移。尚未验证扰动鲁棒性或多种初态成功率。
+- 第 2000 轮策略已通过本地零速度及 0.2 m/s 命令各 20 秒仿真，保持后腿直立、前脚离地；前进实际均速约 0.109 m/s，低于指令，零速度有前移。尚未验证扰动鲁棒性或多种初态成功率。
 
 ## URDF 机械参数对齐方法与验证
 
