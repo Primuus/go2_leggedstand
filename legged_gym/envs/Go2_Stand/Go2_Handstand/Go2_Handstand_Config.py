@@ -185,6 +185,7 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
             default_pos =-0.1####
             default_hip_pos=-0.1
             feet_clearance=2.0
+            feet_air_time=1.0
             ang_xz=-0.5
             contact=0.3
             symmetric_joints=-0.1
@@ -203,6 +204,8 @@ class Go2_Handstand_Cfg_Yu( LeggedRobotCfg ):
         moving_front_height_factor = 0.4 # Effective weight 5.0 * 0.4 = 2.0.
         contact_min_clearance = 0.02 # Raised rear foot must clear this height.
         contact_support_weight_fraction = 0.5 # Loaded foot supports at least half body weight.
+        air_time_threshold = 0.12 # Filtered airborne seconds; score only on landing.
+        air_time_reward_cap = 0.12 # Maximum positive score per foot per landing, before dt/weight.
         base_height_target = 0.52#0.25
         target_foot_height=0.06
         max_contact_force = 200. # forces above this value are penalized

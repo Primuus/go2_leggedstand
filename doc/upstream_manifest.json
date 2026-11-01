@@ -69,7 +69,7 @@
       "path": "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
       "upstream_sha256": "2e992e78be88af2971a15deceee6381edab795ce0eb7e446f0141eb6f2cc2997",
       "bytes": 13241,
-      "local_sha256": "8bacaf0520e0505738fa69c3a039af1c1c9a8a967bedd61af89cec233ceb4d51",
+      "local_sha256": "79eb0a3d9c05f03efdb71bcb334c0ab5cd8414ba5125ff4312bf8e92982beab3",
       "modified": true
     },
     {
@@ -237,8 +237,8 @@
       "path": "rsl_rl/rsl_rl/runners/on_policy_runner.py",
       "upstream_sha256": "dec596b3d65ccaf4ac86bbe5b71d6aa62c0a89dfd80655ecbfe150e95b90d6b4",
       "bytes": 13769,
-      "local_sha256": "dec596b3d65ccaf4ac86bbe5b71d6aa62c0a89dfd80655ecbfe150e95b90d6b4",
-      "modified": false
+      "local_sha256": "6c9dd97178d3fb74b6aeb05de594386f2174556bf319b005ab56d3751b6ebf34",
+      "modified": true
     },
     {
       "path": "rsl_rl/rsl_rl/storage/__init__.py",
@@ -481,12 +481,13 @@
         "go2_hindstand_lab/evaluation.py": "459d738dba8c236bd955900e1683fbc9e75e692b52d11e1e6dde38c3be7ce1ae",
         "go2_hindstand_lab/gait_diagnostics.py": "76a9c2ed9576078a9542f63a0a58c8ff850a2d19d4773c57437b5fa034e8c75b",
         "go2_hindstand_lab/phase.py": "683859745f92b0afca17c7ac7dea944bd824f1b41d24d871c5e539d5af24761a",
-        "go2_hindstand_lab/reference_rewards.py": "6d85ae6f7f9b750a533b08b5bdacb96fde287bd0b91451912fc9c8dedb291188",
-        "go2_hindstand_lab/task.py": "95de9df7d738fabc924c58dce946f2b14a5b8e5a8a5d28ce90c765b6a8781500",
-        "go2_hindstand_lab/validation.py": "6b4cbaeee01faa565e266064e12df2645659e2920125ad42c820ce4e5ba6cacb",
+        "go2_hindstand_lab/reference_rewards.py": "fff33b6ccae36fb65f9b8e2d846554a6e8d9869b93ced7f7e3633096a1f035d3",
+        "go2_hindstand_lab/task.py": "07bac8ac22e34b3cf09809b2cd91683bf0ccf1e3a831a0906f498fafa2215f95",
+        "go2_hindstand_lab/validation.py": "9352f3d4b370d128ec893d153876a0de530b79a866ad0a153e7d48f337882244",
         "ry_python.sh": "cdfec4e0ffcb7c87378ad6e39a8c8ea04ed1e3549f5f11a1e527d41ac72f9563",
-        "scripts/train_lab.py": "8a344d98017af3f8e2cd943712c7e1e83152dcebf0700d8f6454668b986da019",
-        "scripts/eval_mujoco.py": "5d25eaacb0d31454f21ee2bc51eab7b5d49be2aaa7ce935a88856711044e512d"
+        "scripts/train_lab.py": "af1e21d09e4a07c83724e28ff624083a3e08bfeb0abced05a169eed1db754ddf",
+        "scripts/eval_mujoco.py": "5d25eaacb0d31454f21ee2bc51eab7b5d49be2aaa7ce935a88856711044e512d",
+        "go2_hindstand_lab/air_time.py": "cc50920065f1688aff563c80c0e4fad817d2972d233deaa65da473c1967cf3a0"
       },
       "preserved": [
         "Original 45/86 observations retained through iteration 3300; authorized phase extension now 47/88. 12 ordered actions unchanged.",
@@ -680,6 +681,53 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "User-stopped run remains stopped; exported model_4100 separately and viewed locally, no training updates."
+    "training_started": "feet_air_time experiment completed exactly 300 additional updates to 4401; stopped, no further training"
+  },
+  "feet_air_time_experiment": {
+    "authorization": "Enable feet_air_time and train 300 additional updates",
+    "source": "Go2_Handstand._reward_feet_air_time",
+    "weight": 1.0,
+    "threshold_s": 0.12,
+    "positive_cap_s": 0.12,
+    "reward_count": 24,
+    "original_checkpoint": "logs/go2_handstand/2026-11-01_06-25-56_speed05_to4300/model_4100.pt",
+    "original_stored_iter": 3600,
+    "resume_completed_updates": 4101,
+    "additional_updates": 300,
+    "target_completed_updates": 4401,
+    "original_checkpoint_preserved": true,
+    "phase_observations_unchanged": true,
+    "status": "complete; exactly 300 updates; training and evaluations stopped",
+    "report": "doc/腾空时间奖励与300轮测试.md",
+    "preflight_run": "2026-11-01_06-56-44_airtime_preflight",
+    "failed_attempt": "2026-11-01_06-57-14_airtime_to4401",
+    "failed_attempt_completed_updates": 0,
+    "run": "2026-11-01_07-02-38_airtime_to4401",
+    "device": "cuda:1",
+    "cross_gpu_optimizer_restore": "CPU staging, model/moments target GPU, Adam step CPU; validated one temporary in-memory update",
+    "checkpoint_counter_fix": true,
+    "export": {
+      "checkpoint": "logs/go2_handstand/2026-11-01_07-02-38_airtime_to4401/model_4401.pt",
+      "checkpoint_sha256": "7963e4be99789815b526759ab81b1c17c343f73c853d6e212fac811ff6f3d19e",
+      "iter": 4401,
+      "additional_updates": 300,
+      "optimizer_state_entries": 17,
+      "actor_width": 47,
+      "critic_width": 88,
+      "actions": 12,
+      "policy_sha256": "90dbd36374067e369c322d8186f3c384d9e5c303b28d658cec4ff52406aa5354",
+      "policy_bytes": 772050,
+      "export_max_error": 0.0,
+      "test_inputs": 256,
+      "parameters_finite": true,
+      "original_checkpoint_unchanged": true
+    },
+    "compressed_download_bytes": 718531,
+    "completed_updates": 300,
+    "local_evaluation": "logs/go2_handstand/2026-11-01_07-02-38_airtime_to4401/exported/mujoco_comparison.json",
+    "isaac_evaluation": "logs/go2_handstand/2026-11-01_07-09-57_airtime_comparison/evaluation.json",
+    "isaac_bounded_evaluation": "logs/go2_handstand/2026-11-01_07-13-19_airtime_bounded_comparison/evaluation.json",
+    "result": "MuJoCo partial lift/time gains (0.5m/s median60->80ms, peak4.93->5.51cm); high-speed lateral drift worsened. Isaac Lab medians unchanged; both upright in terrain-bounded15s test. No stable6cm or proven alternating gait.",
+    "gui_playback": "normal exit,18.68 simulated seconds,final command0,finite state"
   }
 }

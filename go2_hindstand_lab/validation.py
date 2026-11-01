@@ -45,7 +45,7 @@ def validate(env):
     expected = joint_limits.new_tensor([[float(metadata["limits"][n][k]) for k in ("lower", "upper")] for n in JOINT_NAMES])
     torch.testing.assert_close(joint_limits, expected, rtol=0, atol=1e-5)
     assert env.action_manager.get_term("joints")._joint_names == JOINT_NAMES
-    assert len(SCALES) == 23
+    assert len(SCALES) == 24 and SCALES["feet_air_time"] == 1.
     assert env.observation_manager.group_obs_dim == {"policy": (47,), "critic": (88,)}
     # This experiment samples true standstill or straight forward commands.
     assert not REF.commands.heading_command
@@ -73,7 +73,7 @@ def validate(env):
               "native_joint_names": robot.joint_names, "native_body_names": robot.body_names,
               "initial_base_height_m": float(root_height[0]), "initial_front_foot_height_m": front[0].tolist(),
               "initial_hind_sole_height_m": rear_soles[0].tolist(),
-              "observation_dims": [47, 88], "reward_count": 23, "initial_reward_scores": scores,
+              "observation_dims": [47, 88], "reward_count": len(SCALES), "initial_reward_scores": scores,
               "zero_action_initial_pd": "passed", "urdf_sha256": metadata["urdf_sha256"],
               "inertia_eigenvalue_max_error": float((actual_eigenvalues-expected_eigenvalues).abs().max()),
               "fixed_joint_parameters": "damping=.1, armature=.01, friction=.2 verified",
@@ -88,6 +88,8 @@ def validate(env):
     env.reset()
     s = state(env)
     torch.testing.assert_close(s.dof_pos, s.default.expand_as(s.dof_pos), rtol=0, atol=1e-5)
+    assert torch.all(s.air_time.time == 0) and torch.all(s.air_time.score == 0)
+    report["air_time_reset"] = "timers and touchdown score cleared; 24 active rewards"
     report["zero_action_10_steps_and_reset"] = "finite; reset restored reference angles (not a balance test)"
     report["phase_observations"] = "47/88; noiseless sin/cos; zero at standstill; verified across 10 steps and reset"
     return report

@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--num_envs", type=int, default=4096)
 parser.add_argument("--max_iterations", type=int, default=1500, help="Number of updates to run, additional to a resumed checkpoint")
 parser.add_argument("--resume", type=Path, help="Resume model and optimizer from a training checkpoint")
+parser.add_argument("--resume_iteration", type=int, help="Explicit completed-update count for a legacy checkpoint with stale iter metadata")
 parser.add_argument("--migrate_phase", action="store_true", help="Expand a legacy 45/86 checkpoint and Adam state to 47/88")
 parser.add_argument("--eval_policies", type=Path, nargs="+", help="Evaluate exported policies deterministically; no training")
 parser.add_argument("--evaluation_seconds", type=float, default=20.)
@@ -30,6 +31,8 @@ if args.resume is not None and not args.resume.is_file():
     parser.error(f"Checkpoint does not exist: {args.resume}")
 if args.migrate_phase and args.resume is None:
     parser.error("--migrate_phase requires --resume")
+if args.resume_iteration is not None and (args.resume is None or args.resume_iteration < 0):
+    parser.error("--resume_iteration requires --resume and a nonnegative count")
 
 # Same startup ordering as the working ry_unitree_rl_lab entry point.
 import torch
@@ -77,7 +80,8 @@ def main():
     train["runner"]["save_interval"] = args.save_interval
     (log_dir / "training_config.json").write_text(json.dumps(train, indent=2))
     (log_dir / "env_config.json").write_text(json.dumps(to_dict(load_config()), indent=2))
-    sources = list((ROOT / "go2_hindstand_lab").glob("*.py")) + [Path(__file__), ROOT / "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py"]
+    sources = list((ROOT / "go2_hindstand_lab").glob("*.py")) + [Path(__file__), ROOT / "legged_gym/envs/Go2_Stand/Go2_Handstand/Go2_Handstand_Config.py",
+        ROOT / "rsl_rl/rsl_rl/runners/on_policy_runner.py"]
     provenance = {"source_sha256":{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "backend":"Isaac Lab", "rsl_rl_path":rsl_rl.__file__, "num_envs":args.num_envs,
         "max_iterations":args.max_iterations, "seed":args.seed, "initialization":"scratch"}
@@ -99,6 +103,10 @@ def main():
                 print("PHASE_MIGRATION_PASSED", migrated["phase_migration"], flush=True)
             else:
                 runner.load(str(args.resume), load_optimizer=True)
+            if args.resume_iteration is not None:
+                provenance["checkpoint_stored_iteration"] = runner.current_learning_iteration
+                runner.current_learning_iteration = args.resume_iteration
+                provenance["resume_iteration_override"] = args.resume_iteration
             # The reference loader restores Adam but not PPO's adaptive LR field.
             runner.alg.learning_rate = runner.alg.optimizer.param_groups[0]["lr"]
             provenance.update(initialization="resume", resume_checkpoint=str(args.resume.resolve()),

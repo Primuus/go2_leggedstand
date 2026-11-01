@@ -95,7 +95,8 @@ class StandWalkRewards(unittest.TestCase):
     def test_reward_set_and_phase_are_preserved(self):
         s = make_state()
         active = [n for n in dir(s.cfg.rewards.scales) if not n.startswith('_') and getattr(s.cfg.rewards.scales, n) != 0]
-        self.assertEqual(len(active), 23)
+        self.assertEqual(len(active), 24)
+        self.assertEqual(s.cfg.rewards.scales.feet_air_time, 1.)
         self.assertEqual(s.cfg.env.num_observations, 47)
         self.assertEqual(s.cfg.env.num_privileged_obs, 88)
         self.assertEqual(s.cfg.rewards.target_foot_height, .06)
@@ -110,7 +111,7 @@ class StandWalkRewards(unittest.TestCase):
         changed = {n for n in names if methods[0][n] != methods[1][n]}
         self.assertEqual(changed, {'_reward_tracking_lin_vel', '_reward_default_pos',
                                  '_reward_feet_clearance', '_reward_contact', '_reward_symmetric_joints',
-                                 '_reward_handstand_feet_height_exp'})
+                                 '_reward_handstand_feet_height_exp', '_reward_feet_air_time'})
 
 
 if __name__ == '__main__':

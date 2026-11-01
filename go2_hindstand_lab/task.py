@@ -17,6 +17,7 @@ from .asset import JOINT_NAMES, FOOT_NAMES, ROOT, prepare_urdf, asset_metadata
 from .reference_rewards import ReferenceRewards
 from .phase import phase_observation
 from .gait_diagnostics import GaitDiagnostics
+from .air_time import FeetAirTime
 
 REF = load_config()
 SCALES = {name: getattr(REF.rewards.scales, name) for name in dir(REF.rewards.scales)
@@ -50,6 +51,10 @@ class State(ReferenceRewards):
         self.actor_cache = None
         self.diagnostics = GaitDiagnostics(env.num_envs, env.device, env.step_dt)
         self.diagnostic_tick = -1
+        self.air_time = FeetAirTime(env.num_envs, env.device, env.step_dt,
+                                   REF.rewards.air_time_threshold, REF.rewards.air_time_reward_cap,
+                                   REF.rewards.contact_support_weight_fraction)
+        self.air_time_tick = env.common_step_counter
         self.command_override = None
         self.sample(torch.arange(env.num_envs, device=env.device))
 
@@ -99,6 +104,11 @@ class State(ReferenceRewards):
             self.commands[:, 2] = (.5 * error).clamp(-1, 1)
         # Initialize the source's shared height gate before dependent reward terms.
         self._reward_base_height()
+        if self.air_time_tick != env.common_step_counter:
+            enabled = (self._moving_command() & (env.episode_length_buf > 0)
+                       & (-self.projected_gravity[:, 0] > .7) & (self.rew_hanstand > .70))
+            self.air_time.update(self.contact_forces[:, self.contact_foot_indices, 2], enabled, self.body_weight)
+            self.air_time_tick = env.common_step_counter
         if self.diagnostic_tick != env.common_step_counter and torch.any(env.episode_length_buf > 0):
             self.diagnostics.update(self.hind_sole_heights, self.contact_forces[:, self.contact_foot_indices, 2],
                                     self._get_phase(), self._moving_command())
@@ -177,6 +187,7 @@ def reset_pose(env, env_ids):
         s = env.reference_state
         s.previous_velocity[env_ids] = 0
         s.diagnostics.reset(env_ids)
+        s.air_time.reset(env_ids)
         s.actor_cache = None
         s.refresh_tick = -1
         s.sample(env_ids)

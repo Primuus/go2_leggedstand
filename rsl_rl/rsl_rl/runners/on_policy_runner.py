@@ -98,7 +98,8 @@ class OnPolicyRunner:
         cur_reward_sum = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
         cur_episode_length = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
 
-        tot_iter = self.current_learning_iteration + num_learning_iterations
+        start_iteration = self.current_learning_iteration
+        tot_iter = start_iteration + num_learning_iterations
         for it in range(self.current_learning_iteration, tot_iter):
             start = time.time()
             # Rollout
@@ -130,16 +131,16 @@ class OnPolicyRunner:
                 self.alg.compute_returns(critic_obs)
             
             mean_value_loss, mean_surrogate_loss ,systemloss, mean_entropy_loss= self.alg.update()
+            self.current_learning_iteration = it + 1
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
                 self.log(locals())
-            if it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
+            if self.current_learning_iteration % self.save_interval == 0:
+                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
                 # torch.jit.script(self.alg.actor_critic.actor).save(os.path.join(self.log_dir, 'model_jit_{}.pt'.format(it)))
             ep_infos.clear()
         
-        self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
 
     def log(self, locs, width=80, pad=35):
@@ -187,7 +188,7 @@ class OnPolicyRunner:
             self.writer.add_scalar('Train/mean_reward/time', statistics.mean(locs['rewbuffer']), self.tot_time)
             self.writer.add_scalar('Train/mean_episode_length/time', statistics.mean(locs['lenbuffer']), self.tot_time)
 
-        str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
+        str = f" \033[1m Learning iteration {self.current_learning_iteration}/{locs['tot_iter']} \033[0m "
         # 对称损失打印行（仅 sym_loss 开启时）
         sym_str = f"""{'Symmetry loss:':>{pad}} {locs['systemloss']:.6f}\n""" if self.use_sym_loss else ""
 
@@ -226,8 +227,8 @@ class OnPolicyRunner:
                        f"""{'Total timesteps:':>{pad}} {self.tot_timesteps}\n"""
                        f"""{'Iteration time:':>{pad}} {iteration_time:.2f}s\n"""
                        f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
-                       f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] + 1) * (
-                               locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
+                       f"""{'ETA:':>{pad}} {self.tot_time / (self.current_learning_iteration - locs['start_iteration']) * (
+                               locs['tot_iter'] - self.current_learning_iteration):.1f}s\n""")
         print(log_string)
 
     def save(self, path, infos=None):
@@ -239,7 +240,9 @@ class OnPolicyRunner:
             }, path)
 
     def load(self, path, load_optimizer=True):
-        loaded_dict = torch.load(path)
+        # Stage on CPU so Adam's step counters do not retain the source GPU.
+        # load_state_dict moves parameter moments to the current model's device.
+        loaded_dict = torch.load(path, map_location="cpu")
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])

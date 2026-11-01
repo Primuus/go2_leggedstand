@@ -155,17 +155,8 @@ class ReferenceRewards:
         return torch.where(self._moving_command(), walking, standing)*(self.rew_hanstand>0.70)
 
     def _reward_feet_air_time(self):
-        # Reward long steps
-        # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-        contact = self.contact_forces[:, self.contact_foot_indices, 2] > 1.
-        contact_filt = torch.logical_or(contact, self.last_contacts) 
-        self.last_contacts = contact
-        first_contact = (self.feet_air_time > 0.) * contact_filt
-        self.feet_air_time += self.dt
-        rew_airTime = torch.sum((self.feet_air_time - 0.4) * first_contact, dim=1) # reward only on first contact with the ground
-        # rew_airTime *= torch.norm(self.commands[:, :2], dim=1) 
-        self.feet_air_time *= ~contact_filt
-        return rew_airTime*(self.rew_hanstand>0.70)
+        # Updated once per physical control step, never while querying rewards.
+        return self.air_time.score
 
     def _reward_symmetric_joints(self):
         # 左右关节对称（参考 go2_trot 的对称设置）：前后两对腿都参与
