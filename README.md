@@ -2,10 +2,12 @@
 
 训练任务提取自 [yusongmin1/My_unitree_go2_gym](https://github.com/yusongmin1/My_unitree_go2_gym) 的 `go2_handstand`，当前已适配服务器现有 Isaac Lab，保留参考仓库自带 PPO、45/86 维观测与 23 项奖励。
 
-当前入口为 `./ry_python.sh scripts/train_lab.py`。适配、短训练验证和实际运行说明见 [Isaac Lab 适配记录](doc/IsaacLab适配与小步验证.md)。已完成累计 3000 轮，本轮已有奖励优化的策略已下载本地：零速漂移改善，行走和抬腿尚未达目标，见 [最新对比结果](doc/站立与抬腿优化及3000轮验证.md)。
+当前入口为 `./ry_python.sh scripts/train_lab.py`。适配、短训练验证和实际运行说明见 [Isaac Lab 适配记录](doc/IsaacLab适配与小步验证.md)。已完成累计 3300 轮，策略已下载本地：前进速度与抬脚幅度提高，稳定段仍未达到 6 cm，零速漂移增大，见 [最新对比结果](doc/抬脚评分调整与3300轮对照.md)。
 
 安装、训练、回放与源码分析见 [doc/工程说明.md](doc/工程说明.md)。逐文件来源与改动标记见 [doc/upstream_manifest.json](doc/upstream_manifest.json)。
 
 已接入复用本机 Go2 资产的独立 MuJoCo 部署，见 [本地 sim2sim](doc/本地MuJoCo部署.md)。
 
 当前已按用户要求调整已有站立/行走奖励，抬腿目标 6 cm、权重 2.0，相位和观测维度保持不变；本轮验证及续训见 [站立与抬腿优化](doc/站立与抬腿优化及3000轮验证.md)。
+
+最新已完成第 3300 轮对照，前进速度提高、稳定段抬脚约 0.95 cm，仍未达到 6 cm，零速漂移有所增加，见 [3300 轮结果](doc/抬脚评分调整与3300轮对照.md)。

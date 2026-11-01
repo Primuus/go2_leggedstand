@@ -503,7 +503,7 @@
       "formal_training_started": true,
       "legacy_gym_entrypoints": "retained as reference only; unavailable on the current server",
       "resume": "--resume restores reference runner model, Adam state and iteration; PPO adaptive learning_rate is synchronized from the restored optimizer. --max_iterations counts additional updates. Simulator and random generator state are reset, not a bitwise continuation.",
-      "latest_training_report": "doc/站立与抬腿优化及3000轮验证.md"
+      "latest_training_report": "doc/抬脚评分调整与3300轮对照.md"
     },
     "stand_walk_refinement": {
       "authorization": "User requested 6 cm clearance, weight 2.0, other discussed refinements without new rewards; explicitly deferred hidden phase changes and authorized 1000 resumed updates from iteration 2000.",
@@ -565,7 +565,16 @@
       "height_measurement": "Actual rear collision sphere bottom using foot pose, local center [-.002,0,0], radius .022, relative to ground; assets unchanged",
       "phase": "unchanged",
       "documentation": "doc/抬脚评分调整与3300轮对照.md",
-      "validation": "7 CPU tests passed locally and on server; 64-env resume from 3000 for 3 updates, exit 0, physical/preflight/finite/export checks passed"
+      "validation": "7 CPU tests passed locally and on server; 64-env resume from 3000 for 3 updates, exit 0, physical/preflight/finite/export checks passed",
+      "formal_run": {
+        "run": "2026-11-01_05-00-33_lift_to3300_20261101_045911",
+        "start_iteration": 3000,
+        "final_iteration": 3300,
+        "num_envs": 4096,
+        "exit_code": 0,
+        "policy_sha256": "92440c2b23dd4d00790f997990fc345dcaffc975fe9567859c3eefdc03b12c02",
+        "result": "Forward speed increased to .1478 m/s for .2 command; post-2s hind sole peaks about .0095 m; zero-command drift increased to .2281 m over 20s; phase unchanged; stopped"
+      }
     }
   },
   "server_sync": {
@@ -580,6 +589,6 @@
     "remote_preexisting_project": false,
     "remote_git": "not initialized; commits local only",
     "isaac_gym_runtime": "Isaac Gym absent; replaced by validated Isaac Lab backend",
-    "training_started": "Completed original 2000 updates and authorized existing-reward refinement to 3000; final policies exported locally; all training stopped"
+    "training_started": "Completed authorized 300-update comparison from model_3000 to model_3300; export downloaded and MuJoCo compared; training stopped"
   }
 }
